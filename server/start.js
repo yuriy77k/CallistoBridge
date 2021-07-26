@@ -82,7 +82,7 @@ async function authorize(txId, fromChainId) {
                 console.log(messageHash);
                 sig = web3.eth.accounts.sign(messageHash, pk);
                 console.log(sig);
-                return {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, bridge: bridgeContract};
+                return {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, bridge: bridgeContracts[toChainId]};
             }
     
         }

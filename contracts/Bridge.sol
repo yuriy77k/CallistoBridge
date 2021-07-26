@@ -168,6 +168,7 @@ contract CallistoBridge is Ownable {
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
     address[] public authorities;   // list of authorities
+    bool public frozen; // if frozen - swap will not work
     mapping(address => bool) isAuthority; // authority has to sign claim transaction (message)
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
@@ -181,6 +182,7 @@ contract CallistoBridge is Ownable {
     event Claim(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken);
     event Fee(address indexed sender, uint256 fee);
     event CreatePair(address toToken, bool isWrapped, address fromToken, uint256 fromChainId);
+    event Frozen(bool status);
 
     constructor (address _tokenImplementation) {
         require(_tokenImplementation != address(0), "Wrong tokenImplementation");
@@ -189,9 +191,27 @@ contract CallistoBridge is Ownable {
         threshold = 1;
     }
 
+    modifier notFrozen() {
+        require(!frozen, "Bridge is frozen");
+        _;
+    }
+
     // get number of authorities
     function getAuthoritiesNumber() external view returns(uint256) {
         return authorities.length;
+    }
+
+    // Owner or Authority may freeze bridge in case of anomaly detection
+    function freeze() external {
+        require(msg.sender == owner() || isAuthority[msg.sender]);
+        frozen = true;
+        emit Frozen(true);
+    }
+
+    // Only owner can manually unfreeze contract
+    function unfreeze() external onlyOwner {
+        frozen = false;
+        emit Frozen(false);
     }
 
     // set/remove Authority address
@@ -266,7 +286,8 @@ contract CallistoBridge is Ownable {
         uint256 toChainId   // destination chain Id where will be claimed tokens
     ) 
         external
-        payable 
+        payable
+        notFrozen
     {
         Token memory pair = tokenPair[toChainId][token];
         require(pair.token != address(0), "There is no pair");
@@ -297,7 +318,7 @@ contract CallistoBridge is Ownable {
         uint256 fromChainId,    // chain ID where user deposited
         bytes calldata sig      // authority signature
     ) 
-        external 
+        external
     {
         bytes[] memory s = new bytes[](1);
         s[0] = sig;
@@ -327,7 +348,8 @@ contract CallistoBridge is Ownable {
         uint256 fromChainId,    // chain ID where user deposited
         bytes[] memory sig      // authority signature
     ) 
-        internal 
+        internal
+        notFrozen
     {
         uint256 t;
         require(!isTxProcessed[fromChainId][txId], "Transaction already processed");
