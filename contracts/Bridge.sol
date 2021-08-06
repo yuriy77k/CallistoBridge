@@ -169,6 +169,7 @@ contract CallistoBridge is Ownable {
     address public feeTo; // send fee to this address
     address[] public authorities;   // list of authorities
     bool public frozen; // if frozen - swap will not work
+    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
     mapping(address => bool) isAuthority; // authority has to sign claim transaction (message)
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
@@ -252,20 +253,35 @@ contract CallistoBridge is Ownable {
         emit SetThreshold(threshold);
     }
 
+    // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
+    function calculateNonce() external view returns(uint256 nonce, address addr) {
+        nonce = wrapNonce;
+        address implementation = tokenImplementation;
+        while (true) {
+            nonce++;
+            addr = Clones.predictDeterministicAddress(implementation, bytes32(nonce));
+            if (uint160(addr) & uint160(0xfF00000000000000000000000000000000000000) == uint160(0xCc00000000000000000000000000000000000000))
+                break;
+        }
+    }
+
     // Create wrapped token for foreign token
     function createWrappedToken(
         address fromToken,      // foreign token address
         uint256 fromChainId,    // foreign chain ID where token deployed
         string memory name,     // wrapped token name
         string memory symbol,   // wrapped token symbol
-        uint8 decimals          // wrapped token decimals (should be the same as in original token)
+        uint8 decimals,         // wrapped token decimals (should be the same as in original token)
+        uint256 nonce           // nonce to create wrapped token address begin with 0xCC.... 
     )
         external
         onlyOwner
     {
         require(fromToken != address(0), "Wrong token address");
-        bytes32 salt = keccak256(abi.encodePacked(fromToken, fromChainId));
-        address wrappedToken = Clones.cloneDeterministic(tokenImplementation, salt);
+        require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
+        require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
+        wrapNonce = nonce;
+        address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
         IBEP20TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
         tokenPair[fromChainId][wrappedToken] = Token(fromToken, true);
         tokenForeign[fromChainId][fromToken] = wrappedToken;
