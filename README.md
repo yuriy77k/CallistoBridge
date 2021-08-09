@@ -112,7 +112,7 @@ returns JSON string, where:
   * `message` - error description
 
 
-Use `signature`, `token`, `value`, `to` to call function [claimMultiSig]() it the `bridge` contract on destination network
+Use `signature`, `token`, `value`, `to` to call function [claimMultiSig](https://github.com/yuriy77k/CallistoBridge/blob/5b4c6bef3415ff643e0f7b22f80470faf002f45e/contracts/Bridge.sol#L345-L352) it the `bridge` contract on destination network
 
 ### Example
 ```js
@@ -130,9 +130,9 @@ Use `signature`, `token`, `value`, `to` to call function [claimMultiSig]() it th
 
 ## Authority server security
 
-Each authority script has own private key that stored in [environment]() (`.env`). 
+Each authority script has own private key that stored in [environment](https://github.com/yuriy77k/CallistoBridge/blob/5b4c6bef3415ff643e0f7b22f80470faf002f45e/server/authority.js#L47) (`.env`). 
 
-To get transaction events the script use [public RPC](). There is a risk of compromising a public site and providing malicious data.
+To get transaction events the script use [public RPC](https://github.com/yuriy77k/CallistoBridge/blob/5b4c6bef3415ff643e0f7b22f80470faf002f45e/server/authority.js#L59-L64). There is a risk of compromising a public site and providing malicious data.
 
 Therefore, I highly recommend to use local node instead of public RPC or, at least, use different public RPC for different authority script.
 
