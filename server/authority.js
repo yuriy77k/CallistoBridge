@@ -52,7 +52,7 @@ const bridgeContracts = {
     "97" : "0x05ef4B789C75c02d5182e6EfB7c64230Ec9B58b2",  // BSC test net
     "56" : "",  // BSC main net
     "42" : "",  // ETH KOVAN test net 
-    "1" : "",   // ETH main netcls
+    "1" : "",   // ETH main net
 };
 
 const providers = {

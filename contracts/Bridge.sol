@@ -348,7 +348,7 @@ contract CallistoBridge is Ownable {
         address to,             // user address
         uint256 value,          // value of tokens
         uint256 fromChainId,    // chain ID where user deposited
-        bytes[] calldata sig    // authority signature
+        bytes[] calldata sig    // authority signatures
     ) 
         external 
     {
