@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+	 <head>
+	<title>Callisto Bridge</title>
+	<meta charset="UTF-8">
+	<meta name="format-detection" content="telephone=no">
+	<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+	<link rel="stylesheet" href="css/style.min.css">
+	<link rel="shortcut icon" href="favicon.ico">
+	<!-- <meta name="robots" content="noindex, nofollow"> -->
+	<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"> -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+	<body>
+		<header class="header">
+	<div class="header-conteiner">
+		<div class="header-menu">
+			<div class="topnav">
+				<a href="#home" class="active">
+					<div class="logo">
+						<img src="img/logo.webp">
+					</div>
+				</a>
+				<!-- Navigation links (hidden by default) -->
+				<nav id="top-nav">
+					<ul class="">
+					  
+					  <li class="dropdown"><a href="#">Services <span>&dtrif;</span></a>
+						<ul class="dropdown-menu">
+							<li><a href="#">Smart Contract Audit</a></li>
+							<li><a href="#">Smart Contract Migration</a></li>
+						</ul>
+						</li>
+					  
+					  <li class="dropdown"><a href="#">Ecosystem <span>&dtrif;</span> </a>
+						<ul class="dropdown-menu">
+						  <li><a href="#">Wallets</a></li>
+						  <li><a href="#">Cold Staking</a></li>
+						  <li><a href="#">Total Eclipse</a></li>
+						  <li><a href="#">CryptoBot</a></li>
+						  <li><a href="#">On-Chain Governance</a></li>
+						</ul>
+					  </li>
+					  
+					  <li><a href="#">Blog</a></li>
+					  <li><a href="#">Cyptocurrency</a></li>
+					  <li><a href="#">Get an audit</a></li>
+					  <li class="whitepaper"><a href="#">Whitepaper</a></li>
+					  
+					</ul>
+				  </nav>
+				<!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
+				<a href="javascript:void(0);" class="icon" onclick="myMenu()">
+					<svg viewBox="0 0 100 80" width="40" height="40">
+						<rect width="70" height="5"></rect>
+						<rect y="20" width="70" height="5"></rect>
+						<rect y="40" width="70" height="5"></rect>
+					  </svg>
+				</a>
+			  </div>
+		</div>
+	</div>
+</header>
+		<main class="page">
+			<div class="wrapper">
+				<div class="main-content">
+					<div class="left-block">
+						<div class="left-block__title">Bridge</div>
+						<div class="left-block__text">Allow user to transfer tokens from one chain to another</div>
+						<div class="left-block__links">
+							<a href="#"></a>
+							<a href="#"></a>
+						</div>
+					</div>
+					<div class="right-block">
+						<div class="right-block__asset">
+							<div class="right-block__asset-title">Assets
+							</div>
+							<div class="container">
+								<a data-modal="modal-one">
+									<div class="asset" id="asset-img">
+										<picture><source srcset="img/CLO.png" type="image/png"><img src="img/CLO.png" alt="" ></picture>
+										<div class="asset-name" id="asset-shot-name">CLO</div>
+									</div>
+								</a>
+							</div>
+							<div class="right-block__asset-popup">
+								<div class="modal" id="modal-one">
+									<div class="modal-bg modal-exit"></div>
+									<div class="modal-container">
+									<a class="crypto" id="crypto-block" onclick="toggleAssetsTop(this)">
+										<div class="crypto__main">
+											<picture><source srcset="img/CLO.png" type="image/png"><img src="img/CLO.png" alt="" ></picture>
+											<div class="crypto__info">
+												<div class="crypto__short-name">CLO</div>
+												<div class="crypto__name">CLO</div>
+											</div>
+										</div>
+									</a>
+									<a class="crypto" id="crypto-block" onclick="toggleAssetsTop(this)">
+									<div class="crypto__main">
+										<picture><source srcset="img/BNB.png" type="image/png"><img src="img/BNB.png" alt=""></picture>
+											<div class="crypto__info">
+											<div class="crypto__short-name" >BNB</div>
+											<div class="crypto__name">BNB</div>
+											</div>
+										</div>
+									</a>
+									<a class="crypto" id="crypto-block" onclick="toggleAssetsTop(this)">
+										<div class="crypto__main">
+											<picture><source srcset="img/ETH-icon.webp" type="image/webp"><img src="img/ETH-icon.png" alt="" ></picture>
+											<div class="crypto__info">
+												<div class="crypto__short-name">ETH</div>
+												<div class="crypto__name">ETH</div>
+											</div>
+										</div>
+									</a>
+									<button class="modal-close modal-exit">X</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="right-block__transfer transfer">
+							<div class="transfer-block-cont">
+								<label for="transfer__from">From</label>
+								<div class="transfer__from transfer__block">
+									<div class="transfer__block-img" id="blockImg"><picture><source srcset="img/CLO.png" type="image/png"><img src="img/CLO.png" alt="" ></picture></div>
+									<div class="transfer__block-bottom">
+										<div class="transfer__block-name" id="blockNameFirst">Callisto Network testnet</div>
+										<ul class="">
+											<li class="dropdown"><a href="#"><div class="block"><div id="triangle-down"></div></div></a>
+												<ul class="dropdown-menu">
+													<li><a href="#" onclick="toggleTextFirst(this, 20729)">Callisto Network testnet</a></li>
+													<!--<li><a href="#" onclick="toggleTextFirst(this, 42)">Ethereum Network Kovan testnet</a></li> -->
+													<li><a href="#" onclick="toggleTextFirst(this, 97)">Binance Smart Chain testnet</a></li>
+												</ul>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+							<div class="transfer__button"><div class="transfer__button-arrow"></div></div>
+							<div class="transfer-block-cont">
+								<label for="transfer__to">To</label>
+								<div class="transfer__to transfer__block">
+									<div class="transfer__block-img"><picture><source srcset="img/chain-icon.svg" type="image/svg"><img src="img/chain-icon.svg" alt="" ></picture></picture></div>
+									<div class="transfer__block-bottom">
+										<div class="transfer__block-name" id="blockNameSecond">Binance Smart Chain testnet</div>
+										<ul class="">
+											<li class="dropdown"><a href="#"><div class="block"><div id="triangle-down"></div></div></a>
+												<ul class="dropdown-menu">
+													<li><a href="#" onclick="toggleTextSecond(this, 20729)">Callisto Network testnet</a></li>
+													<!--<li><a href="#" onclick="toggleTextSecond(this, 42)">Ethereum Network Kovan testnet</a></li> -->
+													<li><a href="#" onclick="toggleTextSecond(this, 97)">Binance Smart Chain testnet</a></li>
+												</ul>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>	
+						</div>
+						<div class="transfer__info"></div>
+						<div class="right-block__amount">
+							<form>
+								<label for="amount">Amount</label>
+								<input id="amount" name="amount">
+							</form>
+						</div>
+						<div class="right-block__connect connect">
+							<button class="connect__button" id="main_button" onclick="clickButton(this)">Connect Wallet</button><br>
+						</div>
+					</div>
+				</div>
+				<footer class="footer">
+	<div class="footer__content">
+		<div class="sub footer__block">
+			<div class="sub__title footer__title">Subscribe to our newsletter for updates</div>
+			<div class="sub__bottom">
+				<form>
+					<input id="footer-form" placeholder="Your email">
+				</form>
+				<button color="#34B37C" class="sub__button">
+					<div class="sub__button-arrow"><picture><source srcset="img/arrow.webp" type="image/webp"><img src="img/arrow.png" alt=""></picture></div>
+				</button>
+			</div>
+		</div>
+		<div class="community footer__block">
+			<div class="community__title footer__title">Join our community</div>
+			<div class="community__link link">
+				<div class="link__row">
+					<a href="#" class="link__item"><picture><source srcset="img/twitter.webp" type="image/webp"><img src="img/twitter.png" alt=""></picture></a>
+					<a href="#" class="link__item"><picture><source srcset="img/reddit.webp" type="image/webp"><img src="img/reddit.png" alt=""></picture></a>
+					<a href="#" class="link__item"><picture><source srcset="img/discord.webp" type="image/webp"><img src="img/discord.png" alt=""></picture></a>
+				</div>	
+				<div class="link__row">
+					<a href="#" class="link__item"><picture><source srcset="img/linkedin.webp" type="image/webp"><img src="img/linkedin.png" alt=""></picture></a>
+					<a href="#" class="link__item"><picture><source srcset="img/telegram.webp" type="image/webp"><img src="img/telegram.png" alt=""></picture></a>
+					<a href="#" class="link__item"><picture><source srcset="img/youtube.webp" type="image/webp"><img src="img/youtube.png" alt=""></picture></a>
+				</div>
+			</div>
+		</div>
+		<div class="resources footer__block">
+			<div class="resources__title footer__title">Resources</div>
+			<div class="footer__list">
+				<ul>
+					<li><a href="#" class="footer__services-item">FAQ</a></li>
+					<li><a href="#" class="footer__services-item">Timeline</a></li>
+					<li><a href="#" class="footer__services-item">Airdrop</a></li>
+					<li><a href="#" class="footer__services-item">Community Guidelines</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="callisto footer__block">
+			<div class="callisto__title footer__title">Callisto</div>
+			<div class="footer__list">
+				<ul>
+					<li><a href="#" class="footer__services-item">Partners</a></li>
+					<li><a href="#" class="footer__services-item">Our GitHub repositories</a></li>
+					<li><a href="#" class="footer__services-item">Media Kit</a></li>
+					<li><a href="#" class="footer__services-item">Contact us</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</footer>
+			</div>
+		</main>
+		<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script src="js/vendors.min.js"></script>
+<script src="js/web3.min.js"></script>
+<script src="js/token_abi.js"></script>
+<script src="js/bridge_abi.js"></script>
+<script src="js/scripts.js"></script>
+	</body>
+</html>

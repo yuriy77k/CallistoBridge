@@ -8,7 +8,7 @@ Call function auth.authorize(txId, fromChainId),
 where:
     `txId` - transaction hash, 
     `fromChainId` - chain ID where transaction was sent.
-returns JSON string,
+returns JSON object,
 where:
 if all good:
     "isSuccess" - true,
@@ -106,17 +106,17 @@ async function authorize(txId, fromChainId) {
                 //console.log(sig);
                 let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: bridgeContracts[p.toChainId]};
                 //console.log(ret);
-                return JSON.stringify(ret)
+                return ret;
             }
     
         }
         let msg = "Wrong transaction hash:" + txId;
         console.log(msg);
-        return JSON.stringify({isSuccess: false, message: msg});   
+        return {isSuccess: false, message: msg};   
     })
     .catch(err => {
         console.log(err);
-        return JSON.stringify({isSuccess: false, message: err.toString()});
+        return {isSuccess: false, message: err.toString()};
     })
 }
 
