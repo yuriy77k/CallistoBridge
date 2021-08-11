@@ -115,6 +115,137 @@ library TransferHelper {
     }
 }
 
+/**
+ * @dev Library for managing
+ * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
+ * types.
+ *
+ * Sets have the following properties:
+ *
+ * - Elements are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableSet for EnumerableSet.AddressSet;
+ *
+ *     // Declare a set state variable
+ *     EnumerableSet.AddressSet private mySet;
+ * }
+ * ```
+ *
+ * As of v3.0.0, only sets of type `address` (`AddressSet`) and `uint256`
+ * (`UintSet`) are supported.
+ */
+library EnumerableSet {
+
+    struct AddressSet {
+        // Storage of set values
+        address[] _values;
+
+        // Position of the value in the `values` array, plus 1 because index 0
+        // means a value is not in the set.
+        mapping (address => uint256) _indexes;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        if (!contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._indexes[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._indexes[value];
+
+        if (valueIndex != 0) { // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            // When the value to delete is the last one, the swap operation is unnecessary. However, since this occurs
+            // so rarely, we still do the swap anyway to avoid the gas cost of adding an 'if' statement.
+
+            address lastvalue = set._values[lastIndex];
+
+            // Move the last value to the index where the value to delete is
+            set._values[toDeleteIndex] = lastvalue;
+            // Update the index for the moved value
+            set._indexes[lastvalue] = toDeleteIndex + 1; // All indexes are 1-based
+
+            // Delete the slot where the moved value was stored
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._indexes[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return set._indexes[value] != 0;
+    }
+
+    /**
+     * @dev Returns 1-based index of value in the set. O(1).
+     */
+    function indexOf(AddressSet storage set, address value) internal view returns (uint256) {
+        return set._indexes[value];
+    }
+
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return set._values.length;
+    }
+
+   /**
+    * @dev Returns the value stored at position `index` in the set. O(1).
+    *
+    * Note that there are no guarantees on the ordering of values inside the
+    * array, and it may change when more values are added or removed.
+    *
+    * Requirements:
+    *
+    * - `index` must be strictly less than {length}.
+    */
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
+        require(set._values.length > index, "EnumerableSet: index out of bounds");
+        return set._values[index];
+    }
+}
+
 abstract contract Ownable {
     address internal _owner;
 
@@ -123,11 +254,12 @@ abstract contract Ownable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
+    /* will use initialize instead
     constructor () {
         _owner = msg.sender;
         emit OwnershipTransferred(address(0), msg.sender);
     }
-
+    */
     /**
      * @dev Returns the address of the current owner.
      */
@@ -156,6 +288,8 @@ abstract contract Ownable {
 
 contract CallistoBridge is Ownable {
     using TransferHelper for address;
+    using EnumerableSet for EnumerableSet.AddressSet;
+    EnumerableSet.AddressSet authorities; // authority has to sign claim transaction (message)
 
     address constant MAX_NATIVE_COINS = address(31); // addresses from address(1) to MAX_NATIVE_COINS are considered as native coins 
                                             // CLO = address(1)
@@ -167,10 +301,8 @@ contract CallistoBridge is Ownable {
     uint256 public threshold;   // minimum number of signatures required to approve swap
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
-    address[] public authorities;   // list of authorities
     bool public frozen; // if frozen - swap will not work
     uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
-    mapping(address => bool) isAuthority; // authority has to sign claim transaction (message)
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
     mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
@@ -185,13 +317,24 @@ contract CallistoBridge is Ownable {
     event CreatePair(address toToken, bool isWrapped, address fromToken, uint256 fromChainId);
     event Frozen(bool status);
 
+    // run only once from proxy
+    function initialize(address newOwner, address _tokenImplementation) external {
+        require(newOwner != address(0) && _owner == address(0)); // run only once
+        _owner = newOwner;
+        emit OwnershipTransferred(address(0), msg.sender);
+        require(_tokenImplementation != address(0), "Wrong tokenImplementation");
+        tokenImplementation = _tokenImplementation;
+        feeTo = msg.sender;
+        threshold = 1;
+    }
+    /*
     constructor (address _tokenImplementation) {
         require(_tokenImplementation != address(0), "Wrong tokenImplementation");
         tokenImplementation = _tokenImplementation;
         feeTo = msg.sender;
         threshold = 1;
     }
-
+    */
     modifier notFrozen() {
         require(!frozen, "Bridge is frozen");
         _;
@@ -199,12 +342,12 @@ contract CallistoBridge is Ownable {
 
     // get number of authorities
     function getAuthoritiesNumber() external view returns(uint256) {
-        return authorities.length;
+        return authorities.length();
     }
 
     // Owner or Authority may freeze bridge in case of anomaly detection
     function freeze() external {
-        require(msg.sender == owner() || isAuthority[msg.sender]);
+        require(msg.sender == owner() || authorities.contains(msg.sender));
         frozen = true;
         emit Frozen(true);
     }
@@ -215,29 +358,20 @@ contract CallistoBridge is Ownable {
         emit Frozen(false);
     }
 
-    // set/remove Authority address
-    function setAuthority(address authority, bool isEnable) external onlyOwner{
+    // add authority
+    function addAuthority(address authority) external onlyOwner{
         require(authority != address(0), "Zero address");
-        if (isEnable) {
-            require(!isAuthority[authority], "Authority already enabled");
-            require(authorities.length < 50, "Too much authorities");   // to avoid OUT_OF_GAS exception
-            isAuthority[authority] = true;
-            authorities.push(authority);
-        } else {
-            require(isAuthority[authority], "Authority already disabled");
-            isAuthority[authority] = false;
-            uint n = authorities.length;    // use local variable to save gas
-            for (uint i = 0; i < n; i++) {  // maximum number of authorities is 50
-                if(authorities[i] == authority) {
-                    authorities[i] = authorities[n-1];
-                    authorities.pop();
-                    break;
-                }
-            }
-        }
-        emit SetAuthority(authority, isEnable);
+        require(authorities.length() < 255, "Too many authorities");
+        require(authorities.add(authority), "Authority already added");
+        emit SetAuthority(authority, true);
     }
 
+    // remove authority
+    function removeAuthority(address authority) external onlyOwner{
+        require(authorities.remove(authority), "Authority does not exist");
+        emit SetAuthority(authority, false);
+    }
+    
     // set fee receiver address
     function setFeeTo(address newFeeTo) external onlyOwner{
         require(newFeeTo != address(0), "Zero address");
@@ -248,7 +382,7 @@ contract CallistoBridge is Ownable {
 
     // set threshold - minimum number of signatures required to approve swap
     function setThreshold(uint256 _threshold) external onlyOwner{
-        require(threshold != 0 && threshold <= authorities.length, "Wrong threshold");
+        require(threshold != 0 && threshold <= authorities.length(), "Wrong threshold");
         threshold = _threshold;
         emit SetThreshold(threshold);
     }
@@ -288,12 +422,18 @@ contract CallistoBridge is Ownable {
         emit CreatePair(wrappedToken, true, fromToken, fromChainId); //wrappedToken - wrapped token contract address
     }
 
-    // Create pair from foreign wrapped token to native token
-    function createPair(address toToken, address fromToken, uint256 fromChainId) external onlyOwner {
+    /**
+     * @dev Create pair between existing tokens on native and foreign chains
+     * @param toToken token address on native chain
+     * @param fromToken token address on foreign chain
+     * @param fromChainId foreign chain ID
+     * @param isWrapped `true` if `toToken` is our wrapped token otherwise `false`
+     */
+    function createPair(address toToken, address fromToken, uint256 fromChainId, bool isWrapped) external onlyOwner {
         require(tokenPair[fromChainId][toToken].token == address(0), "Pair already exist");
-        tokenPair[fromChainId][toToken] = Token(fromToken, false);
+        tokenPair[fromChainId][toToken] = Token(fromToken, isWrapped);
         tokenForeign[fromChainId][fromToken] = toToken;
-        emit CreatePair(toToken, false, fromToken, fromChainId);
+        emit CreatePair(toToken, isWrapped, fromToken, fromChainId);
     }
 
     function depositTokens(
@@ -367,17 +507,23 @@ contract CallistoBridge is Ownable {
         internal
         notFrozen
     {
-        uint256 t;
         require(!isTxProcessed[fromChainId][txId], "Transaction already processed");
         Token memory pair = tokenPair[fromChainId][token];
         require(pair.token != address(0), "There is no pair");
         isTxProcessed[fromChainId][txId] = true;
         bytes32 messageHash = keccak256(abi.encodePacked(token, to, value, txId, fromChainId, block.chainid));
         messageHash = prefixed(messageHash);
+        uint256 uniqSig;
+        uint256 set;    // maximum number of authorities is 255
         for (uint i = 0; i < sig.length; i++) {
-            if (isAuthority[recoverSigner(messageHash, sig[i])]) t++;
+            uint256 index = authorities.indexOf(recoverSigner(messageHash, sig[i]));
+            uint256 mask = 1 << index;
+            if (index != 0 && (set & mask) == 0 ) {
+                set |= mask;
+                uniqSig++;
+            }
         }
-        require(threshold <= t, "Require more signatures");
+        require(threshold <= uniqSig, "Require more signatures");
 
         if (token <= MAX_NATIVE_COINS) {
             to.safeTransferETH(value);

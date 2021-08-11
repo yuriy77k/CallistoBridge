@@ -42,7 +42,7 @@ In this example of `.env` the authority address is 0x3d40De3046a7D7E2Aa9E8097A86
 */
 
 const Web3 = require('web3');
-require('dotenv').config();
+//require('dotenv').config(); // uncomment if use .env file for enviroment variables
 
 const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
@@ -79,6 +79,12 @@ const deposit_event_abi = [
 // on error: {isSuccess: false, message: error_message}; 
 async function authorize(txId, fromChainId) {
     var provider = providers[fromChainId];
+    var bridgeContract = bridgeContracts[fromChainId];
+    if (!bridgeContract) {
+        let msg = "No bridgeContract for chain ID:" + fromChainId;
+        //console.log(msg);
+        return {isSuccess: false, message: msg};
+    }
     if (!provider) {
         let msg = "No provider for chain ID:" + fromChainId;
         //console.log(msg);
@@ -89,24 +95,23 @@ async function authorize(txId, fromChainId) {
     return web3.eth.getTransactionReceipt(txId)
     .then(receipt => {
         if (receipt && receipt.status) {
-            let element;
             for (var i = 0; i < receipt.logs.length; i++) {
-                if (receipt.logs[i].topics[0] == "0xf5dd9317b9e63ac316ce44acc85f670b54b339cfa3e9076e1dd55065b922314b") {
-                    element = receipt.logs[i];
+                let element = receipt.logs[i];
+                if (element.topics[0] == "0xf5dd9317b9e63ac316ce44acc85f670b54b339cfa3e9076e1dd55065b922314b"
+                    && element.address == bridgeContract
+                    && element.transactionHash == txId) 
+                {
                     element.topics.shift(); // remove 
+                    let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
+                    //console.log(p);
+                    let messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId);
+                    //console.log(messageHash);
+                    sig = web3.eth.accounts.sign(messageHash, pk);
+                    //console.log(sig);
+                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: bridgeContracts[p.toChainId]};
+                    //console.log(ret);
+                    return ret;
                 }
-            }
-            bridgeContract = bridgeContracts[fromChainId];
-            if (bridgeContract && element.address == bridgeContract && element.transactionHash == txId) {
-                let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
-                //console.log(p);
-                let messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId);
-                //console.log(messageHash);
-                sig = web3.eth.accounts.sign(messageHash, pk);
-                //console.log(sig);
-                let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: bridgeContracts[p.toChainId]};
-                //console.log(ret);
-                return ret;
             }
     
         }
