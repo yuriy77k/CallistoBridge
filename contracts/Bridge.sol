@@ -345,6 +345,11 @@ contract CallistoBridge is Ownable {
         return authorities.length();
     }
 
+    // returns list of authorities addresses
+    function getAuthorities() external view returns(address[] memory) {
+        return authorities._values;
+    }
+
     // Owner or Authority may freeze bridge in case of anomaly detection
     function freeze() external {
         require(msg.sender == owner() || authorities.contains(msg.sender));
@@ -472,39 +477,9 @@ contract CallistoBridge is Ownable {
         address to,             // user address
         uint256 value,          // value of tokens
         uint256 fromChainId,    // chain ID where user deposited
-        bytes calldata sig      // authority signature
+        bytes[] memory sig      // authority signatures
     ) 
         external
-    {
-        bytes[] memory s = new bytes[](1);
-        s[0] = sig;
-        _claim(token, txId, to, value, fromChainId, s);
-    }
-
-    // claim Multi signature
-    function claimMultiSig(
-        address token,          // token to receive
-        bytes32 txId,           // deposit transaction hash on fromChain 
-        address to,             // user address
-        uint256 value,          // value of tokens
-        uint256 fromChainId,    // chain ID where user deposited
-        bytes[] calldata sig    // authority signatures
-    ) 
-        external 
-    {
-        _claim(token, txId, to, value, fromChainId, sig);
-    }
-
-    // claim
-    function _claim(
-        address token,          // token to receive
-        bytes32 txId,           // deposit transaction hash on fromChain 
-        address to,             // user address
-        uint256 value,          // value of tokens
-        uint256 fromChainId,    // chain ID where user deposited
-        bytes[] memory sig      // authority signature
-    ) 
-        internal
         notFrozen
     {
         require(!isTxProcessed[fromChainId][txId], "Transaction already processed");

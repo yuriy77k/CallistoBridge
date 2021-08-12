@@ -375,12 +375,13 @@ contract BEP20TokenCloned is Context, IBEP20, Ownable {
     emit OwnershipTransferred(address(0), newOwner);
   }
 
+/* 
   // allow owner to change minter (bridge)
   function setMinter(address newMinter) external onlyOwner {
     minter = newMinter;
     emit SetMinter(address(0), minter);
   }
-  
+*/  
   /**
    * @dev Mint tokens to user in amount of his deposit. Used by bridge to mint wrapped tokens
    * @param user - address of user's wallet

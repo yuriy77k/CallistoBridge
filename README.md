@@ -137,14 +137,27 @@ To get transaction events the script use [public RPC](https://github.com/yuriy77
 Therefore, I highly recommend to use local node instead of public RPC or, at least, use different public RPC for different authority script.
 
 ## CLO test net
-[Bridge](https://testnet-explorer.callisto.network/address/0x6664fD73ed95CF608B5e461A6cE89212F989EdCA/contracts) `0x6664fD73ed95CF608B5e461A6cE89212F989EdCA`
+[Bridge](https://testnet-explorer.callisto.network/address/0xE1AF7a91EBC36E66D89a6201680dC5242796b246/contracts) `0xE1AF7a91EBC36E66D89a6201680dC5242796b246`
+
+[Bridge implementation](https://testnet-explorer.callisto.network/address/0x6bae44aa40df48204337Df2ED580a0FC2642dE1B/contracts) `0x6bae44aa40df48204337Df2ED580a0FC2642dE1B`
 
 [Token implementation](https://testnet-explorer.callisto.network/address/0xa89f3920D5F4B333d783C9cac33E13A26C78bc2b/contracts) `0xa89f3920D5F4B333d783C9cac33E13A26C78bc2b`
 
 
 ## BSC test net
-[Bridge](https://testnet.bscscan.com/address/0x05ef4b789c75c02d5182e6efb7c64230ec9b58b2#code) `0x05ef4B789C75c02d5182e6EfB7c64230Ec9B58b2`
+[Bridge](https://testnet.bscscan.com/address/0x3777c0b1cbfc65743149d5559db0bc199b7c647c#code) `0x3777c0b1CBFC65743149D5559db0bC199B7C647c`
+
+[Bridge implementation](https://testnet.bscscan.com/address/0xe0553dcf6e9dc1e8097420b8dac26afe3e57a0c3#code) `0xe0553dcf6e9dc1e8097420b8dac26afe3e57a0c3`
 
 [Token implementation](https://testnet.bscscan.com/address/0x57a40032d14755b9e481584c51b8ef59e93120be#code) `0x57a40032d14755B9e481584C51b8eF59e93120bE`
 
-[wrapped CLO token](https://testnet.bscscan.com/address/0xbf48dca064ac248ba2096fb7e5f41724322942e9#code) `0xBf48DCa064aC248Ba2096Fb7e5F41724322942E9`
+[wrapped CLO token](https://testnet.bscscan.com/address/0xccea50dda26f141fcc41ad7e94755936d8c57e28#code) `0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28`
+
+## ETH Kovan test net
+[Bridge](https://kovan.etherscan.io/address/0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c#code) `0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c`
+
+[Bridge implementation](https://kovan.etherscan.io/address/0x6664fd73ed95cf608b5e461a6ce89212f989edca#code) `0x6664fd73ed95cf608b5e461a6ce89212f989edca`
+
+[Token implementation](https://kovan.etherscan.io/address/0x06c0d53112b522c2caa0b150dc431386ceec0cf0#code) `0x06c0d53112b522c2caa0b150dc431386ceec0cf0`
+
+[wrapped CLO token](https://kovan.etherscan.io/address/0xcc48d2250b55b82696978184e75811f1c0ef383f#code) `0xcc48d2250b55b82696978184e75811f1c0ef383f`

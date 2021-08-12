@@ -4,11 +4,11 @@ const Authorities = [
 ]
 
 const bridgeContracts = {
-  "20729" : "0x6664fD73ed95CF608B5e461A6cE89212F989EdCA", // CLO test net
+  "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
   "820" : "", // CLO main net
-  "97" : "0x05ef4B789C75c02d5182e6EfB7c64230Ec9B58b2",  // BSC test net
+  "97" : "0x3777c0b1CBFC65743149D5559db0bC199B7C647c",  // BSC test net
   "56" : "",  // BSC main net
-  "42" : "",  // ETH KOVAN test net 
+  "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
   "1" : "",   // ETH main net
 };
 
