@@ -7,6 +7,7 @@ interface IBEP20TokenCloned {
     function mint(address user, uint256 amount) external;
     function burnFrom(address account, uint256 amount) external returns(bool);
     function burn(uint256 amount) external returns(bool);
+    function balanceOf(address account) external view returns (uint256);
 }
 
 /**
@@ -275,15 +276,6 @@ abstract contract Ownable {
         _;
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
 }
 
 contract CallistoBridge is Ownable {
@@ -298,6 +290,11 @@ contract CallistoBridge is Ownable {
         bool isWrapped; // is native token wrapped of foreign
     }
 
+    struct Upgrade {
+        address newContract;
+        uint64  validFrom;
+    }
+
     uint256 public threshold;   // minimum number of signatures required to approve swap
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
@@ -306,7 +303,11 @@ contract CallistoBridge is Ownable {
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
     mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
-
+    mapping(address => uint256) public tokenDeposits;  // amount of tokens were deposited by users
+    mapping(address => bool) public isFreezer;  // addresses that have right to freeze contract 
+    uint256 public setupMode;   // time when setup mode will start, 0 if disable
+    Upgrade public upgradeData;
+    address public founders;
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
@@ -316,16 +317,22 @@ contract CallistoBridge is Ownable {
     event Fee(address indexed sender, uint256 fee);
     event CreatePair(address toToken, bool isWrapped, address fromToken, uint256 fromChainId);
     event Frozen(bool status);
+    event RescuedERC20(address token, address to, uint256 value);
+    event SetFreezer(address freezer, bool isActive);
+    event SetupMode(uint time);
+    event UpgradeRequest(address newContract, uint256 validFrom);
 
     // run only once from proxy
-    function initialize(address newOwner, address _tokenImplementation) external {
-        require(newOwner != address(0) && _owner == address(0)); // run only once
+    function initialize(address newOwner, address newFounders, address _tokenImplementation) external {
+        require(newOwner != address(0) && newFounders != address(0) && founders == address(0)); // run only once
         _owner = newOwner;
+        founders = newFounders;
         emit OwnershipTransferred(address(0), msg.sender);
         require(_tokenImplementation != address(0), "Wrong tokenImplementation");
         tokenImplementation = _tokenImplementation;
         feeTo = msg.sender;
         threshold = 1;
+        setupMode = 1; // allow setup after deployment
     }
     /*
     constructor (address _tokenImplementation) {
@@ -340,6 +347,45 @@ contract CallistoBridge is Ownable {
         _;
     }
 
+    // allowed only in setup mode
+    modifier onlySetup() {
+        uint256 mode = setupMode; //use local variable to save gas
+        require(mode != 0 && mode < block.timestamp, "Not in setup mode");
+        _;
+    }
+
+    function upgradeTo() external view returns(address newContract) {
+        Upgrade memory upg = upgradeData;
+        require(upg.validFrom < block.timestamp && upg.newContract != address(0), "Upgrade not allowed");
+        newContract = upg.newContract;
+    }
+
+    function requestUpgrade(address newContract) external onlyOwner {
+        require(newContract != address(0), "Zero address");
+        uint256 validFrom = block.timestamp + 3 days;
+        upgradeData = Upgrade(newContract, uint64(validFrom));
+        emit UpgradeRequest(newContract, validFrom);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+
+    function transferOwnership(address newOwner) public {
+        require(founders == msg.sender, "Ownable: caller is not the founders");
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+
+    function ChangeFounder(address newFounders) public {
+        require(founders == msg.sender, "caller is not the founders");
+        require(newFounders != address(0), "new owner is the zero address");
+        emit OwnershipTransferred(founders, newFounders);
+        founders = newFounders;
+    }
+
     // get number of authorities
     function getAuthoritiesNumber() external view returns(uint256) {
         return authorities.length();
@@ -352,7 +398,7 @@ contract CallistoBridge is Ownable {
 
     // Owner or Authority may freeze bridge in case of anomaly detection
     function freeze() external {
-        require(msg.sender == owner() || authorities.contains(msg.sender));
+        require(msg.sender == owner() || authorities.contains(msg.sender) || isFreezer[msg.sender]);
         frozen = true;
         emit Frozen(true);
     }
@@ -361,6 +407,13 @@ contract CallistoBridge is Ownable {
     function unfreeze() external onlyOwner {
         frozen = false;
         emit Frozen(false);
+    }
+
+    // add authority
+    function setFreezer(address freezer, bool isActive) external onlyOwner{
+        require(freezer != address(0), "Zero address");
+        isFreezer[freezer] = isActive;
+        emit SetFreezer(freezer, isActive);
     }
 
     // add authority
@@ -374,6 +427,8 @@ contract CallistoBridge is Ownable {
     // remove authority
     function removeAuthority(address authority) external onlyOwner{
         require(authorities.remove(authority), "Authority does not exist");
+        uint256 n = authorities.length();
+        if (threshold > n) threshold = n;   //
         emit SetAuthority(authority, false);
     }
     
@@ -392,6 +447,16 @@ contract CallistoBridge is Ownable {
         emit SetThreshold(threshold);
     }
 
+    function disableSetupMode() external onlyOwner {
+        setupMode = 0;
+        emit SetupMode(0);
+    }
+
+    function enableSetupMode() external onlyOwner {
+        setupMode = block.timestamp + 1 days;
+        emit SetupMode(setupMode);
+    }
+
     // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
     function calculateNonce() external view returns(uint256 nonce, address addr) {
         nonce = wrapNonce;
@@ -402,6 +467,12 @@ contract CallistoBridge is Ownable {
             if (uint160(addr) & uint160(0xfF00000000000000000000000000000000000000) == uint160(0xCc00000000000000000000000000000000000000))
                 break;
         }
+    }
+
+    function rescueERC20(address token, address to) external onlyOwner {
+        uint256 value = IBEP20TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
+        token.safeTransfer(to, value);
+        emit RescuedERC20(token, to, value);
     }
 
     // Create wrapped token for foreign token
@@ -460,6 +531,7 @@ contract CallistoBridge is Ownable {
             if(pair.isWrapped) {
                 IBEP20TokenCloned(token).burnFrom(msg.sender, value);
             } else {
+                tokenDeposits[token] += value;
                 token.safeTransferFrom(msg.sender, address(this), value);
             }
         }
@@ -506,6 +578,7 @@ contract CallistoBridge is Ownable {
             if(pair.isWrapped) {
                 IBEP20TokenCloned(token).mint(to, value);
             } else {
+                tokenDeposits[token] -= value;
                 token.safeTransfer(to, value);
             }
         }
@@ -547,5 +620,6 @@ contract CallistoBridge is Ownable {
     // Builds a prefixed hash to mimic the behavior of eth_sign.
     function prefixed(bytes32 hash) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-    }     
+    }
+
 }

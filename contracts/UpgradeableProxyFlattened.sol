@@ -424,7 +424,8 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
      * 
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgrade}.
      */
-    function upgradeTo(address newImplementation) external ifAdmin {
+    function upgrade() external ifAdmin {
+        address newImplementation = IBridge(address(this)).upgradeTo();
         _upgradeTo(newImplementation);
     }
 
@@ -452,7 +453,11 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
     }
 }
 
+interface IBridge {
+    function upgradeTo() external view returns(address);
+}
 
+// initialize() = 0x8129fc1c
 contract BridgeUpgradeableProxy is TransparentUpgradeableProxy {
 
     constructor(address logic, address admin, bytes memory data) TransparentUpgradeableProxy(logic, admin, data) {

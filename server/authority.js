@@ -42,7 +42,7 @@ In this example of `.env` the authority address is 0x3d40De3046a7D7E2Aa9E8097A86
 */
 
 const Web3 = require('web3');
-//require('dotenv').config(); // uncomment if use .env file for enviroment variables
+require('dotenv').config(); // if use .env file for enviroment variables
 
 const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
