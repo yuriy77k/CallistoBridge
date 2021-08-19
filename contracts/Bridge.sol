@@ -404,20 +404,20 @@ contract CallistoBridge is Ownable {
     }
 
     // Only owner can manually unfreeze contract
-    function unfreeze() external onlyOwner {
+    function unfreeze() external onlyOwner onlySetup {
         frozen = false;
         emit Frozen(false);
     }
 
     // add authority
-    function setFreezer(address freezer, bool isActive) external onlyOwner{
+    function setFreezer(address freezer, bool isActive) external onlyOwner {
         require(freezer != address(0), "Zero address");
         isFreezer[freezer] = isActive;
         emit SetFreezer(freezer, isActive);
     }
 
     // add authority
-    function addAuthority(address authority) external onlyOwner{
+    function addAuthority(address authority) external onlyOwner onlySetup {
         require(authority != address(0), "Zero address");
         require(authorities.length() < 255, "Too many authorities");
         require(authorities.add(authority), "Authority already added");
@@ -425,15 +425,13 @@ contract CallistoBridge is Ownable {
     }
 
     // remove authority
-    function removeAuthority(address authority) external onlyOwner{
+    function removeAuthority(address authority) external onlyOwner {
         require(authorities.remove(authority), "Authority does not exist");
-        uint256 n = authorities.length();
-        if (threshold > n) threshold = n;   //
         emit SetAuthority(authority, false);
     }
     
     // set fee receiver address
-    function setFeeTo(address newFeeTo) external onlyOwner{
+    function setFeeTo(address newFeeTo) external onlyOwner onlySetup {
         require(newFeeTo != address(0), "Zero address");
         address previousFeeTo = feeTo;
         feeTo = newFeeTo;
@@ -441,7 +439,7 @@ contract CallistoBridge is Ownable {
     }
 
     // set threshold - minimum number of signatures required to approve swap
-    function setThreshold(uint256 _threshold) external onlyOwner{
+    function setThreshold(uint256 _threshold) external onlyOwner onlySetup {
         require(threshold != 0 && threshold <= authorities.length(), "Wrong threshold");
         threshold = _threshold;
         emit SetThreshold(threshold);
@@ -486,6 +484,7 @@ contract CallistoBridge is Ownable {
     )
         external
         onlyOwner
+        onlySetup
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
@@ -505,7 +504,7 @@ contract CallistoBridge is Ownable {
      * @param fromChainId foreign chain ID
      * @param isWrapped `true` if `toToken` is our wrapped token otherwise `false`
      */
-    function createPair(address toToken, address fromToken, uint256 fromChainId, bool isWrapped) external onlyOwner {
+    function createPair(address toToken, address fromToken, uint256 fromChainId, bool isWrapped) external onlyOwner onlySetup {
         require(tokenPair[fromChainId][toToken].token == address(0), "Pair already exist");
         tokenPair[fromChainId][toToken] = Token(fromToken, isWrapped);
         tokenForeign[fromChainId][fromToken] = toToken;
