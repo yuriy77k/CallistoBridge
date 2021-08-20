@@ -154,6 +154,13 @@ contract MultisigWallet {
         _;
     }
     
+    constructor (address[] memory _owners) {
+        for (uint i = 0; i < _owners.length; i++) {
+            require(_owners[i] != address(0), "Zero address");
+            owners.add(_owners[i]);
+        }
+    }
+
     // get number of owners
     function getOwnersNumber() external view returns(uint256) {
         return owners.length();
