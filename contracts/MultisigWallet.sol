@@ -135,8 +135,9 @@ library EnumerableSet {
 contract MultisigWallet {
     using EnumerableSet for EnumerableSet.AddressSet;
     struct Ballot {
-        uint64 expire;      // time when ballot expire
         uint128 votes;      // bitmap of unique votes (max 127 votes)
+        uint64 expire;      // time when ballot expire
+        uint8 yea;          // number of votes `Yea`
     }
 
     EnumerableSet.AddressSet owners; // founders may transfer contract's ownership
@@ -201,24 +202,21 @@ contract MultisigWallet {
         if (b.expire == 0 || b.expire < uint64(block.timestamp)) { // if no ballot or ballot expired - create new ballot
             b.expire = uint64(block.timestamp + expirePeriod);
             b.votes = 0;
+            b.yea = 0;
             emit CreateBallot(ballotHash, b.expire);
         }
-        uint256 votes = b.votes | (1 << index);
-        uint256 uniqVote = 0;    
-        uint256 len = owners.length();
-        for (uint256 i = 1; i <= len; i++) {
-            if (votes & (1 << i) != 0 ) {
-                uniqVote++;
-            }
+        uint256 mask = 1 << index;
+        if (b.votes & mask == 0) {  // this owner don't vote yet.
+            b.votes = uint128(b.votes | mask); // record owner's vote
+            b.yea += 1; // increase total votes "Yea"
         }
 
-        if (uniqVote >= len / 2 + 1) {   // uniqVote > 50% of owners
+        if (b.yea >= owners.length() / 2 + 1) {   // vote "Yea" > 50% of owners
+            delete ballots[ballotHash];
             execute(to, value, data);
             emit Execute(ballotHash, to, value, data);
-            delete ballots[ballotHash];
         } else {
             // update ballot
-            b.votes = uint128(votes);
             ballots[ballotHash] = b;
         }
     }
