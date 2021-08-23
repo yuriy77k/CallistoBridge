@@ -24,7 +24,8 @@ const Networks = {
 const Tokens = {
   "CLO" : {
     "20729" : "0x0000000000000000000000000000000000000001",
-    "97" : "0xBf48DCa064aC248Ba2096Fb7e5F41724322942E9"
+    "97" : "0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28",
+    "42" : "0xcc48d2250b55b82696978184e75811f1c0ef383f"
   }
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)
