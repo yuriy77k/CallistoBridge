@@ -1,15 +1,17 @@
 const Authorities = [
   //"http://127.0.0.1:3000/auth?"
+  "https://ip-159-225.cust.aspone.cz/auth?",
+  "https://z3ks0jkyd5.execute-api.us-east-2.amazonaws.com/default/auth/",
   "https://a78aj8vsu0.execute-api.us-west-2.amazonaws.com/auth/"
 ]
 
 const bridgeContracts = {
   "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
-  "820" : "", // CLO main net
+  "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
   "97" : "0x3777c0b1CBFC65743149D5559db0bC199B7C647c",  // BSC test net
-  "56" : "",  // BSC main net
+  "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
   "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
-  "1" : "",   // ETH main net
+  "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
 };
 
 const Networks = {
@@ -23,9 +25,20 @@ const Networks = {
 
 const Tokens = {
   "CLO" : {
-    "20729" : "0x0000000000000000000000000000000000000001",
-    "97" : "0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28",
-    "42" : "0xcc48d2250b55b82696978184e75811f1c0ef383f"
+    "20729" : "0x0000000000000000000000000000000000000001", // CLO test net
+    "820": "0x0000000000000000000000000000000000000001",  // CLO main net
+    "97" : "0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28",  // BSC test net
+    "56" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",  // BSC main net
+    "42" : "0xcc48d2250b55b82696978184e75811f1c0ef383f",  // ETH KOVAN test net 
+    "1" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53"    // ETH main net
+  },
+  "ETH" : {
+    "820": "0xcC00860947035a26Ffe24EcB1301ffAd3a89f910",  // CLO main net
+    "1" : "0x0000000000000000000000000000000000000002"    // ETH main net
+  },
+  "BNB" : {
+    "820": "0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF",  // CLO main net
+    "56" : "0x0000000000000000000000000000000000000003"    // ETH main net
   }
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)

@@ -48,11 +48,11 @@ const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
 const bridgeContracts = {
     "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
-    "820" : "", // CLO main net
+    "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
     "97" : "0x3777c0b1CBFC65743149D5559db0bC199B7C647c",  // BSC test net
-    "56" : "",  // BSC main net
+    "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
     "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
-    "1" : "",   // ETH main net
+    "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
 };
 
 const providers = {

@@ -308,6 +308,7 @@ contract CallistoBridge is Ownable {
     uint256 public setupMode;   // time when setup mode will start, 0 if disable
     Upgrade public upgradeData;
     address public founders;
+    address public requiredAuthority;   // authority address that MUST sign swap transaction
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
@@ -429,7 +430,12 @@ contract CallistoBridge is Ownable {
         require(authorities.remove(authority), "Authority does not exist");
         emit SetAuthority(authority, false);
     }
-    
+
+    // set authority address that MUST sign claim request
+    function setRequiredAuthority(address authority) external onlyOwner onlySetup {
+        requiredAuthority = authority;
+    }
+
     // set fee receiver address
     function setFeeTo(address newFeeTo) external onlyOwner onlySetup {
         require(newFeeTo != address(0), "Zero address");
@@ -557,12 +563,15 @@ contract CallistoBridge is Ownable {
         Token memory pair = tokenPair[fromChainId][token];
         require(pair.token != address(0), "There is no pair");
         isTxProcessed[fromChainId][txId] = true;
+        address must = requiredAuthority;
         bytes32 messageHash = keccak256(abi.encodePacked(token, to, value, txId, fromChainId, block.chainid));
         messageHash = prefixed(messageHash);
         uint256 uniqSig;
         uint256 set;    // maximum number of authorities is 255
         for (uint i = 0; i < sig.length; i++) {
-            uint256 index = authorities.indexOf(recoverSigner(messageHash, sig[i]));
+            address authority = recoverSigner(messageHash, sig[i]);
+            if (authority == must) must = address(0);
+            uint256 index = authorities.indexOf(authority);
             uint256 mask = 1 << index;
             if (index != 0 && (set & mask) == 0 ) {
                 set |= mask;
@@ -570,6 +579,7 @@ contract CallistoBridge is Ownable {
             }
         }
         require(threshold <= uniqSig, "Require more signatures");
+        require(must == address(0), "The required authority does not sign");
 
         if (token <= MAX_NATIVE_COINS) {
             to.safeTransferETH(value);
