@@ -45,7 +45,7 @@ const Tokens = {
   },
   "ETC" : {
     "820": "0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0",  // CLO main net
-    "1" : "0x0000000000000000000000000000000000000004"    // ETC main net
+    "61" : "0x0000000000000000000000000000000000000004"    // ETC main net
   }
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)
