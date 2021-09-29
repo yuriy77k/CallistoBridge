@@ -518,6 +518,7 @@ contract CallistoBridge is Ownable {
     }
 
     function depositTokens(
+        address receiver,   // address of token receiver on destination chain
         address token,      // token that user send (if token address < 32, then send native coin)
         uint256 value,      // tokens value
         uint256 toChainId   // destination chain Id where will be claimed tokens
@@ -526,8 +527,34 @@ contract CallistoBridge is Ownable {
         payable
         notFrozen
     {
+        address pair_token = _deposit(token, value, toChainId);
+        emit Deposit(token, receiver, value, toChainId, pair_token);
+    }
+    
+    function depositTokens(
+        address token,      // token that user send (if token address < 32, then send native coin)
+        uint256 value,      // tokens value
+        uint256 toChainId   // destination chain Id where will be claimed tokens
+    ) 
+        external
+        payable
+        notFrozen
+    {
+        address pair_token = _deposit(token, value, toChainId);
+        emit Deposit(token, msg.sender, value, toChainId, pair_token);
+    }
+    
+    function _deposit(
+        address token,      // token that user send (if token address < 32, then send native coin)
+        uint256 value,      // tokens value
+        uint256 toChainId   // destination chain Id where will be claimed tokens
+    ) 
+        internal 
+        returns (address pair_token) 
+    {
         Token memory pair = tokenPair[toChainId][token];
         require(pair.token != address(0), "There is no pair");
+        pair_token = pair.token;
         uint256 fee = msg.value;
         if (token <= MAX_NATIVE_COINS) {
             require(value <= msg.value, "Wrong value");
@@ -544,7 +571,6 @@ contract CallistoBridge is Ownable {
             feeTo.safeTransferETH(fee);
             emit Fee(msg.sender, fee);
         }
-        emit Deposit(token, msg.sender, value, toChainId, pair.token);
     }
 
     // claim

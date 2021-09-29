@@ -53,6 +53,7 @@ const bridgeContracts = {
     "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
     "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
     "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
+    "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
 };
 
 const providers = {
@@ -61,7 +62,8 @@ const providers = {
     "97" : "https://data-seed-prebsc-1-s2.binance.org:8545/",  // BSC test net
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
     "42" : "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",  // ETH KOVAN test net 
-    "1" : "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",   // ETH main net    
+    "1" : "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",   // ETH main net
+    "61" : "https://www.ethercluster.com/etc", // ETC main net
 }
 
 const deposit_event_abi = [

@@ -12,6 +12,7 @@ const bridgeContracts = {
   "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
   "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
   "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
+  "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
 };
 
 const Networks = {
@@ -21,6 +22,7 @@ const Networks = {
   "56" : "Binance Smart Chain",  // BSC main net
   "42" : "Ethereum testnet Kovan",  // ETH KOVAN test net 
   "1" : "Ethereum",   // ETH main net
+  "61" : "Ethereum Classic", // ETC main net
 };
 
 const Tokens = {
@@ -30,7 +32,8 @@ const Tokens = {
     "97" : "0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28",  // BSC test net
     "56" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",  // BSC main net
     "42" : "0xcc48d2250b55b82696978184e75811f1c0ef383f",  // ETH KOVAN test net 
-    "1" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53"    // ETH main net
+    "1" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",   // ETH main net
+    "61" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53"   // ETC main net
   },
   "ETH" : {
     "820": "0xcC00860947035a26Ffe24EcB1301ffAd3a89f910",  // CLO main net
@@ -39,6 +42,10 @@ const Tokens = {
   "BNB" : {
     "820": "0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF",  // CLO main net
     "56" : "0x0000000000000000000000000000000000000003"    // ETH main net
+  },
+  "ETC" : {
+    "820": "0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0",  // CLO main net
+    "61" : "0x0000000000000000000000000000000000000004"    // ETC main net
   }
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)

@@ -161,3 +161,28 @@ Therefore, I highly recommend to use local node instead of public RPC or, at lea
 [Token implementation](https://kovan.etherscan.io/address/0x06c0d53112b522c2caa0b150dc431386ceec0cf0#code) `0x06c0d53112b522c2caa0b150dc431386ceec0cf0`
 
 [wrapped CLO token](https://kovan.etherscan.io/address/0xcc48d2250b55b82696978184e75811f1c0ef383f#code) `0xcc48d2250b55b82696978184e75811f1c0ef383f`
+
+### BNB main net
+[Bridge](https://bscscan.com/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#code) `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
+
+[wrapped CLO token `ccCLO`](https://bscscan.com/address/0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53#code) `0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53`
+
+### ETH main net
+[Bridge](https://etherscan.io/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#code) `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
+
+[wrapped CLO token `ccCLO`](https://etherscan.io/address/0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53#code) `0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53`
+
+### ETC main net
+[Bridge](https://blockscout.com/etc/mainnet/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#code) `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
+
+[wrapped CLO token `ccCLO`](https://blockscout.com/etc/mainnet/address/0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53#code) `0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53`
+
+### CLO main net
+[Bridge](https://explorer.callisto.network/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#code) `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
+
+[wrapped BNB token `ccBNB`](https://explorer.callisto.network/address/0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF#code) `0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF`
+
+[wrapped ETH token `ccETH`](https://explorer.callisto.network/address/0xcC00860947035a26Ffe24EcB1301ffAd3a89f910#code) `0xcC00860947035a26Ffe24EcB1301ffAd3a89f910`
+
+[wrapped ETC token `ccETC`](https://explorer.callisto.network/address/0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0#code) `0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0`
+
