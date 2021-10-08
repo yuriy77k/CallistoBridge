@@ -41,11 +41,11 @@ const Tokens = {
   },
   "BNB" : {
     "820": "0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF",  // CLO main net
-    "56" : "0x0000000000000000000000000000000000000003"    // ETH main net
+    "56" : "0x0000000000000000000000000000000000000003"   // BSC main net
   },
   "ETC" : {
     "820": "0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0",  // CLO main net
-    "61" : "0x0000000000000000000000000000000000000004"    // ETC main net
+    "61" : "0x0000000000000000000000000000000000000004"   // ETC main net
   }
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)
