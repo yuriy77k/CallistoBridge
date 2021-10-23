@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-interface IBEP20TokenCloned {
-    // initialize cloned token just for BEP20TokenCloned
+interface IERC223TokenCloned {
+    // initialize cloned token just for ERC223TokenCloned
     function initialize(address newOwner, string calldata name, string calldata symbol, uint8 decimals) external;
     function mint(address user, uint256 amount) external;
     function burnFrom(address account, uint256 amount) external returns(bool);
@@ -309,6 +309,8 @@ contract CallistoBridge is Ownable {
     Upgrade public upgradeData;
     address public founders;
     address public requiredAuthority;   // authority address that MUST sign swap transaction
+    mapping(address => address) public migration;   // migration oldToken => newToken
+    bool public migrationSetupForbidden;    // forbid adding migration tokens
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
@@ -322,6 +324,7 @@ contract CallistoBridge is Ownable {
     event SetFreezer(address freezer, bool isActive);
     event SetupMode(uint time);
     event UpgradeRequest(address newContract, uint256 validFrom);
+    event AddTokenMigration(address tokenFrom, address tokenTo);
 
     // run only once from proxy
     function initialize(address newOwner, address newFounders, address _tokenImplementation) external {
@@ -474,7 +477,7 @@ contract CallistoBridge is Ownable {
     }
 
     function rescueERC20(address token, address to) external onlyOwner {
-        uint256 value = IBEP20TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
+        uint256 value = IERC223TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
         token.safeTransfer(to, value);
         emit RescuedERC20(token, to, value);
     }
@@ -497,7 +500,7 @@ contract CallistoBridge is Ownable {
         require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
         wrapNonce = nonce;
         address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
-        IBEP20TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
+        IERC223TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
         tokenPair[fromChainId][wrappedToken] = Token(fromToken, true);
         tokenForeign[fromChainId][fromToken] = wrappedToken;
         emit CreatePair(wrappedToken, true, fromToken, fromChainId); //wrappedToken - wrapped token contract address
@@ -515,6 +518,14 @@ contract CallistoBridge is Ownable {
         tokenPair[fromChainId][toToken] = Token(fromToken, isWrapped);
         tokenForeign[fromChainId][fromToken] = toToken;
         emit CreatePair(toToken, isWrapped, fromToken, fromChainId);
+    }
+
+    // Due to issue in Callisto Explorer when createPair with isWrapped = 0 it sends transaction with isWrapped = 1
+    // It makes this pair unusable without chance to fix it.
+    // function reversIsWrapped allow to reverse isWrapped value
+    function reversIsWrapped(address toToken, uint256 fromChainId) external onlyOwner onlySetup {
+        bool isWrapped = tokenPair[fromChainId][toToken].isWrapped;
+        tokenPair[fromChainId][toToken].isWrapped = !isWrapped;
     }
 
     function depositTokens(
@@ -544,7 +555,50 @@ contract CallistoBridge is Ownable {
         address pair_token = _deposit(token, value, toChainId);
         emit Deposit(token, msg.sender, value, toChainId, pair_token);
     }
-    
+
+    // ERC223 token transfer callback
+    // bytes _data = abi.encode(address receiver, uint256 toChainId)
+    function tokenReceived(address _from, uint _value, bytes calldata _data) external {
+        require(_data.length == 64, "Incorrect _data");
+        (
+        address receiver,   // address of token receiver on destination chain
+        uint256 toChainId   // destination chain Id where will be claimed tokens
+        ) = abi.decode(_data, (address, uint256));
+        require(receiver != address(0), "Incorrect receiver address");
+        address token = msg.sender;
+        Token memory pair = tokenPair[toChainId][token];
+        require(pair.token != address(0), "There is no pair");
+        if(pair.isWrapped) {
+            IERC223TokenCloned(token).burn(_value);
+        } else {
+            tokenDeposits[token] += _value;
+        }
+        
+        emit Deposit(token, receiver, _value, toChainId, pair.token);
+    }
+
+    // migrate from ERC20 to ERC223
+    function migrate(address token, uint value) external {
+        address newToken = migration[token];
+        require(newToken != address(0), "No migration token");
+        IERC223TokenCloned(token).burnFrom(msg.sender, value);
+        IERC223TokenCloned(newToken).mint(msg.sender, value);
+    }
+
+    // setup token migration
+    function setupTokenMigration(address tokenFrom, address tokenTo) external onlyOwner onlySetup {
+        require(!migrationSetupForbidden);
+        // assign tokenImplementation here to avoid creation unnecessary function
+        tokenImplementation = address(0x4320e2310274dF1C1A46319044286389C6D16987);  // ERC223 token implementation. 
+        migration[tokenFrom] = tokenTo;
+        emit AddTokenMigration(tokenFrom, tokenTo);
+    }
+
+    // forbid setup token migration
+    function forbidMigrationSetup() external onlyOwner onlySetup {
+        migrationSetupForbidden = true;
+    }
+
     function _deposit(
         address token,      // token that user send (if token address < 32, then send native coin)
         uint256 value,      // tokens value
@@ -562,7 +616,7 @@ contract CallistoBridge is Ownable {
             fee -= value;
         } else {
             if(pair.isWrapped) {
-                IBEP20TokenCloned(token).burnFrom(msg.sender, value);
+                IERC223TokenCloned(token).burnFrom(msg.sender, value);
             } else {
                 tokenDeposits[token] += value;
                 token.safeTransferFrom(msg.sender, address(this), value);
@@ -612,7 +666,7 @@ contract CallistoBridge is Ownable {
             to.safeTransferETH(value);
         } else {
             if(pair.isWrapped) {
-                IBEP20TokenCloned(token).mint(to, value);
+                IERC223TokenCloned(token).mint(to, value);
             } else {
                 tokenDeposits[token] -= value;
                 token.safeTransfer(to, value);
