@@ -46,7 +46,7 @@ const Tokens = {
   "ETC" : {
     "820": "0xCCc766f97629a4E14b3af8C91EC54f0b5664A69F",  // CLO main net
     "61" : "0x0000000000000000000000000000000000000005"   // ETC main net
-  }
+  },
   "USDT" : {
     "1" : "0xdac17f958d2ee523a2206206994597c13d831ec7",   // ETH main net
     "56" : "0x55d398326f99059ff775485246999027b3197955",  // BSC main net
