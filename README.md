@@ -184,5 +184,5 @@ Therefore, I highly recommend to use local node instead of public RPC or, at lea
 
 [wrapped ETH token `ccETH`](https://explorer.callisto.network/address/0xcC00860947035a26Ffe24EcB1301ffAd3a89f910#code) `0xcC00860947035a26Ffe24EcB1301ffAd3a89f910`
 
-[wrapped ETC token `ccETC`](https://explorer.callisto.network/address/0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0#code) `0xCc944bF3e76d483e41CC6154d5196E2e5d348fB0`
+[wrapped ETC token `ccETC`](https://explorer.callisto.network/address/0xCCc766f97629a4E14b3af8C91EC54f0b5664A69F#code) `0xCCc766f97629a4E14b3af8C91EC54f0b5664A69F`
 
