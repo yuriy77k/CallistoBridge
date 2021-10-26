@@ -180,9 +180,14 @@ Therefore, I highly recommend to use local node instead of public RPC or, at lea
 ### CLO main net
 [Bridge](https://explorer.callisto.network/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#code) `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
 
-[wrapped BNB token `ccBNB`](https://explorer.callisto.network/address/0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF#code) `0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF`
+[wrapped BNB token `ccBNB`](https://explorer.callisto.network/address/0xcCDe29903E621Ca12DF33BB0aD9D1ADD7261Ace9#code) `0xcCDe29903E621Ca12DF33BB0aD9D1ADD7261Ace9`
 
-[wrapped ETH token `ccETH`](https://explorer.callisto.network/address/0xcC00860947035a26Ffe24EcB1301ffAd3a89f910#code) `0xcC00860947035a26Ffe24EcB1301ffAd3a89f910`
+[wrapped ETH token `ccETH`](https://explorer.callisto.network/address/0xcC208c32Cc6919af5d8026dAB7A3eC7A57CD1796#code) `0xcC208c32Cc6919af5d8026dAB7A3eC7A57CD1796`
 
 [wrapped ETC token `ccETC`](https://explorer.callisto.network/address/0xCCc766f97629a4E14b3af8C91EC54f0b5664A69F#code) `0xCCc766f97629a4E14b3af8C91EC54f0b5664A69F`
 
+#### old ERC20 tokens (should migrate to new ERC223)
+
+[wrapped BNB token `ccBNB`](https://explorer.callisto.network/address/0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF#code) `0xCC78D0A86B0c0a3b32DEBd773Ec815130F9527CF`
+
+[wrapped ETH token `ccETH`](https://explorer.callisto.network/address/0xcC00860947035a26Ffe24EcB1301ffAd3a89f910#code) `0xcC00860947035a26Ffe24EcB1301ffAd3a89f910`
