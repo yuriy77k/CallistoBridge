@@ -599,6 +599,7 @@ contract CallistoBridge is Ownable {
         IERC223TokenCloned(newToken).mint(msg.sender, value);
     }
 
+/*
     // setup token migration
     function setupTokenMigration(address tokenFrom, address tokenTo) external onlyOwner onlySetup {
         require(!migrationSetupForbidden);
@@ -612,6 +613,7 @@ contract CallistoBridge is Ownable {
     function forbidMigrationSetup() external onlyOwner onlySetup {
         migrationSetupForbidden = true;
     }
+*/
 
     function _deposit(
         address token,      // token that user send (if token address < 32, then send native coin)
