@@ -540,6 +540,13 @@ contract CallistoBridge is Ownable {
     {
         require(receiver != address(0), "Incorrect receiver address");
         address pair_token = _deposit(token, value, toChainId);
+        if (token == address(0xbf6c50889d3a620eb42C0F188b65aDe90De958c4) && // BUSDT token on the Callisto chain
+            pair_token == address(0xdAC17F958D2ee523a2206206994597C13D831ec7) && // USDT token on the ETH chain
+            toChainId == 1 ) // destination is ETH chain
+        {
+            // Since USDT token on ETH chain has 6 decimals we have to convert 18 decimals of BUSDT to 6 decimals
+            value = value / 10**12;
+        }
         emit Deposit(token, receiver, value, toChainId, pair_token);
     }
     
@@ -553,6 +560,13 @@ contract CallistoBridge is Ownable {
         notFrozen
     {
         address pair_token = _deposit(token, value, toChainId);
+        if (token == address(0xbf6c50889d3a620eb42C0F188b65aDe90De958c4) && // BUSDT token on the Callisto chain
+            pair_token == address(0xdAC17F958D2ee523a2206206994597C13D831ec7) && // USDT token on the ETH chain
+            toChainId == 1 ) // destination is ETH chain
+        {
+            // Since USDT token on ETH chain has 6 decimals we have to convert 18 decimals of BUSDT to 6 decimals
+            value = value / 10**12;
+        }
         emit Deposit(token, msg.sender, value, toChainId, pair_token);
     }
 
@@ -661,6 +675,14 @@ contract CallistoBridge is Ownable {
         }
         require(threshold <= uniqSig, "Require more signatures");
         require(must == address(0), "The required authority does not sign");
+        
+        if (token == address(0xbf6c50889d3a620eb42C0F188b65aDe90De958c4) && // BUSDT token on the Callisto chain
+            pair.token == address(0xdAC17F958D2ee523a2206206994597C13D831ec7) && // USDT token on the ETH chain
+            fromChainId == 1 ) // from ETH chain
+        {
+            // Since USDT token on ETH chain has 6 decimals we have to convert 6 decimals to 18 decimals of BUSDT 
+            value = value * 10**12;
+        }
 
         if (token <= MAX_NATIVE_COINS) {
             to.safeTransferETH(value);
