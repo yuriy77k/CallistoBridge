@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>BUSDT Multisig</title>
+  <script src="./js/web3.min.js"></script>
+  <script src="./js/multisig.js"></script>
+  <style type="text/css">
+    .block1 { 
+     width: 200px; 
+     padding: 5px;
+     padding-right: 5px; 
+     border: solid 1px black; 
+     float: right;
+    }
+  </style>
+
+</head>
+
+<body>
+
+
+<button type="button" id="login" onclick="login()">Connect wallet</button>
+
+<p>Send 0 CLO to address: 0xb623E7A53835Ed23b23D13B77EC12493fF1eA70F with data: <span id="msg"></span></p>
+
+<h2>Callisto Chain</h2>
+
+<h3>Mint BUSDT</h3>
+Amount <input type="number" id="arg0_r0"></input>, 
+<button type="button" onclick="vote(0,1)">vote</button>
+
+
+<h3>Transfer BUSDT</h3>
+Address of receiver <input type="text" id="arg0_r1"></input>, 
+Amount <input type="number" id="arg1_r1"></input>, 
+<button type="button" onclick="vote(1,2)">vote</button>
+
+<h2>Binance Smart Chain</h2>
+
+<h3>Transfer USDT</h3>
+Address of receiver <input type="text" id="arg0_r2"></input>, 
+Amount <input type="number" id="arg1_r2"></input>, 
+<button type="button" onclick="vote(2,2)">vote</button>
+
+<h3>Transfer USDT to the Bridge</h3>
+<input type="hidden" value="0x55d398326f99059ff775485246999027b3197955" id="arg0_r4"></input>, 
+Amount <input type="number" id="arg1_r4"></input>, 
+<input type="hidden" value="0" id="arg2_r4"></input>, 
+<button type="button" onclick="vote(4,3)">vote</button>
+
+<h2>Ethereum Chain</h2>
+
+<h3>Transfer USDT</h3>
+Address of receiver <input type="text" id="arg0_r3"></input>, 
+Amount <input type="number" id="arg1_r3"></input>, 
+<button type="button" onclick="vote(3,2)">vote</button>
+
+
+
+</body>
+
+</html>

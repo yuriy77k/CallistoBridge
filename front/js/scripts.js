@@ -52,6 +52,7 @@ const Tokens = {
     "61" : "0x0000000000000000000000000000000000000005"   // ETC main net
   },
   "USDT" : {
+    "1" : "0xdAC17F958D2ee523a2206206994597C13D831ec7",   // ETH main net
     "56" : "0x55d398326f99059ff775485246999027b3197955",  // BSC main net
     "820": "0xbf6c50889d3a620eb42c0f188b65ade90de958c4"   // CLO main net
   }

@@ -225,4 +225,9 @@ contract MultisigWallet {
         (bool success,) = to.call{value: value}(data);
         require(success, "Execute error");
     }
+
+    // allow receive ERC223 tokens
+    function tokenReceived(address _from, uint _value, bytes calldata _data) external {} 
+    // allow receive coin
+    receive() external payable {}
 }
