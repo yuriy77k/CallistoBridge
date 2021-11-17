@@ -93,6 +93,7 @@ async function authorize(txId, fromChainId) {
         return {isSuccess: false, message: msg};
     }
     var web3 = new Web3(provider);
+    var lastBlock = await web3.eth.getBlockNumber();
 
     return web3.eth.getTransactionReceipt(txId)
     .then(receipt => {
@@ -103,6 +104,11 @@ async function authorize(txId, fromChainId) {
                     && element.address == bridgeContract
                     && element.transactionHash == txId) 
                 {
+                    if (lastBlock - receipt.blockNumber < 12) { // require at least 12 confirmation
+                        let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of 12";
+                        console.log(msg);
+                        return {isSuccess: false, message: msg};
+                    }
                     element.topics.shift(); // remove 
                     let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
                     //console.log(p);

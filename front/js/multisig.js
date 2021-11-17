@@ -82,7 +82,7 @@ const Rules = [
         }
     },
     {
-        name: "Transfer USDT to bridge", // 4
+        name: "Transfer USDT to bridge", // 4 (BSC)
         chainId: "0x38",
         address: "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",
         ABI: {
@@ -101,21 +101,35 @@ const Rules = [
         }
     },
     {
-        name: "Transfer BUSDT to bridge", // 5
-        chainId: "0x334",
-        address: "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",
+        name: "Approve USDT to bridge", // 5 (BSC)
+        chainId: "0x38",
+        address: "0x55d398326f99059ff775485246999027b3197955",
         ABI: {
-            name: 'depositTokens',
+            name: 'approve',
             type: 'function',
             inputs: [{
                 type: 'address',
-                name: 'token'
+                name: 'spender'
             },{
                 type: 'uint256',
                 name: 'value'
+
+            }]    
+        }
+    },
+    {
+        name: "Approve USDT to bridge", // 6 (ETH)
+        chainId: "0x1",
+        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        ABI: {
+            name: 'approve',
+            type: 'function',
+            inputs: [{
+                type: 'address',
+                name: 'spender'
             },{
                 type: 'uint256',
-                name: 'toChainId'
+                name: 'value'
             }]    
         }
     },
@@ -135,7 +149,7 @@ async function login() {
             from: web3.eth.defaultAccount, //addr[0]
             gasPrice: 0,//parseInt(gas*1),//web3.utils.toWei(10, "Gwei"),
             value: 0,
-            gas: 3000000,
+            gas: 300000,
         };
         BN = web3.utils.BN;
         //token_main = new web3.eth.Contract(token_abi, token_main_addr, params);
