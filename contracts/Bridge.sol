@@ -8,6 +8,8 @@ interface IBEP20TokenCloned {
     function burnFrom(address account, uint256 amount) external returns(bool);
     function burn(uint256 amount) external returns(bool);
     function balanceOf(address account) external view returns (uint256);
+    function allowance(address _owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
 }
 
 /**
@@ -322,6 +324,8 @@ contract CallistoBridge is Ownable {
     event SetFreezer(address freezer, bool isActive);
     event SetupMode(uint time);
     event UpgradeRequest(address newContract, uint256 validFrom);
+    event BridgeToContract(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken, address toContract, bytes data);
+    event ClaimToContract(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken, address toContract);
 
     // run only once from proxy
     function initialize(address newOwner, address newFounders, address _tokenImplementation) external {
@@ -517,6 +521,112 @@ contract CallistoBridge is Ownable {
         emit CreatePair(toToken, isWrapped, fromToken, fromChainId);
     }
 
+    /**
+     * @dev Delete unused pair
+     * @param toToken token address on native chain
+     * @param fromChainId foreign chain ID
+     */
+    function deletePair(address toToken, uint256 fromChainId) external onlyOwner onlySetup {
+        delete tokenPair[fromChainId][toToken];
+    }
+
+    // Move tokens through the bridge and call the contract with 'data' parameters on the destination chain
+    function bridgeToContract(
+        address receiver,   // address of token receiver on destination chain
+        address token,      // token that user send (if token address < 32, then send native coin)
+        uint256 value,      // tokens value
+        uint256 toChainId,  // destination chain Id where will be claimed tokens
+        address toContract, // this contract will be called on destination chain
+        bytes memory data   // this data will passed to contract call (ABI encoded arguments)
+    )
+        external
+        payable
+        notFrozen
+    {
+        require(receiver != address(0), "Incorrect receiver address");
+        address pair_token = _deposit(token, value, toChainId);
+        emit BridgeToContract(token, receiver, value, toChainId, pair_token, toContract, data);
+    }
+
+    // Claim tokens from the bridge and call the contract with 'data' parameters
+    function claimToContract(
+        address token,          // token to receive
+        bytes32 txId,           // deposit transaction hash on fromChain 
+        address to,             // user address
+        uint256 value,          // value of tokens
+        uint256 fromChainId,    // chain ID where user deposited
+        address toContract,     // this contract will be called on destination chain
+        bytes memory data,      // this data will passed to contract call (ABI encoded arguments)
+        bytes[] memory sig      // authority signatures
+    ) 
+        external
+        notFrozen
+    {
+        require(!isTxProcessed[fromChainId][txId], "Transaction already processed");
+        Token memory pair = tokenPair[fromChainId][token];
+        require(pair.token != address(0), "There is no pair");
+        isTxProcessed[fromChainId][txId] = true;
+
+        // Check signature
+        address must = requiredAuthority;
+        bytes32 messageHash = keccak256(abi.encodePacked(token, to, value, txId, fromChainId, block.chainid, toContract, data));
+        messageHash = prefixed(messageHash);
+        uint256 uniqSig;
+        uint256 set;    // maximum number of authorities is 255
+        for (uint i = 0; i < sig.length; i++) {
+            address authority = recoverSigner(messageHash, sig[i]);
+            if (authority == must) must = address(0);
+            uint256 index = authorities.indexOf(authority);
+            uint256 mask = 1 << index;
+            if (index != 0 && (set & mask) == 0 ) {
+                set |= mask;
+                uniqSig++;
+            }
+        }
+        require(threshold <= uniqSig, "Require more signatures");
+        require(must == address(0), "The required authority does not sign");
+
+        // Call toContract
+        if(isContract(toContract) && toContract != address(this)) {
+            bool success;
+            if (token <= MAX_NATIVE_COINS) {
+                uint balance = address(this).balance;
+                (success,) = toContract.call{value: value}(data); // transfer coin back to sender (to address(this)) is not supported
+                if (!success && balance == address(this).balance) { // double check the coin was not spent
+                    to.safeTransferETH(value);  // send coin to user
+                }
+            } else {
+                if(pair.isWrapped) {
+                    IBEP20TokenCloned(token).mint(address(this), value);
+                } else {
+                    tokenDeposits[token] -= value;
+                }
+                uint256 allowance = IBEP20TokenCloned(token).allowance(address(this), toContract);  // should be zero
+                if (allowance == 0) {
+                    IBEP20TokenCloned(token).approve(toContract, value);
+                    (success,) = toContract.call{value: 0}(data);
+                    value = IBEP20TokenCloned(token).allowance(address(this), toContract); // unused amount (the rest) = allowance
+                    if (value != 0) {   // if not all value used reset approvement
+                        IBEP20TokenCloned(token).approve(toContract, 0);
+                    }
+                }
+                token.safeTransfer(to, value);   // send to user rest of tokens
+            }
+        } else {    // if not contract
+            if (token <= MAX_NATIVE_COINS) {
+                to.safeTransferETH(value);
+            } else {
+                if(pair.isWrapped) {
+                    IBEP20TokenCloned(token).mint(to, value);
+                } else {
+                    tokenDeposits[token] -= value;
+                    token.safeTransfer(to, value);
+                }
+            }
+        }
+        emit ClaimToContract(token, to, value, txId, fromChainId, pair.token, toContract);
+    }
+
     function depositTokens(
         address receiver,   // address of token receiver on destination chain
         address token,      // token that user send (if token address < 32, then send native coin)
@@ -658,4 +768,14 @@ contract CallistoBridge is Ownable {
         return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
 
+    function isContract(address account) internal view returns (bool) {
+        // This method relies in extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(account) }
+        return size > 0;
+    }
 }
