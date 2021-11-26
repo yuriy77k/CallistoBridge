@@ -610,10 +610,9 @@ contract CallistoBridge is Ownable {
 
         // Call toContract
         if(isContract(toContract) && toContract != address(this)) {
-            bool success;
             if (token <= MAX_NATIVE_COINS) {
                 uint balance = address(this).balance;
-                (success,) = toContract.call{value: value}(data); // transfer coin back to sender (to address(this)) is not supported
+                (bool success,) = toContract.call{value: value}(data); // transfer coin back to sender (to address(this)) is not supported
                 if (!success && balance == address(this).balance) { // double check the coin was not spent
                     to.safeTransferETH(value);  // send coin to user
                 }
@@ -623,16 +622,15 @@ contract CallistoBridge is Ownable {
                 } else {
                     tokenDeposits[token] -= value;
                 }
-                uint256 allowance = IERC223TokenCloned(token).allowance(address(this), toContract);  // should be zero
-                if (allowance == 0) {
+                if (IERC223TokenCloned(token).allowance(address(this), toContract) == 0) { // should be zero
                     IERC223TokenCloned(token).approve(toContract, value);
-                    (success,) = toContract.call{value: 0}(data);
+                    (bool success,) = toContract.call{value: 0}(data);
                     value = IERC223TokenCloned(token).allowance(address(this), toContract); // unused amount (the rest) = allowance
-                    if (value != 0) {   // if not all value used reset approvement
-                        IERC223TokenCloned(token).approve(toContract, 0);
-                    }
                 }
-                token.safeTransfer(to, value);   // send to user rest of tokens
+                if (value != 0) {   // if not all value used reset approvement
+                    IERC223TokenCloned(token).approve(toContract, 0);
+                    token.safeTransfer(to, value);   // send to user rest of tokens
+                }                
             }
         } else {    // if not contract
             if (token <= MAX_NATIVE_COINS) {
