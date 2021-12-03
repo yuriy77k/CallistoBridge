@@ -540,7 +540,7 @@ contract CallistoBridge is Ownable {
         uint256 value,      // tokens value
         uint256 toChainId,  // destination chain Id where will be claimed tokens
         address toContract, // this contract will be called on destination chain
-        bytes memory data   // this data will passed to contract call (ABI encoded arguments)
+        bytes memory data   // this data will be passed to contract call (ABI encoded parameters)
     )
         external
         payable
@@ -566,7 +566,7 @@ contract CallistoBridge is Ownable {
         uint256 value,          // value of tokens
         uint256 fromChainId,    // chain ID where user deposited
         address toContract,     // this contract will be called on destination chain
-        bytes memory data,      // this data will passed to contract call (ABI encoded arguments)
+        bytes memory data,      // this data will be passed to contract call (ABI encoded parameters)
         bytes[] memory sig      // authority signatures
     ) 
         external

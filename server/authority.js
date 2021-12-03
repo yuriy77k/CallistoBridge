@@ -74,6 +74,15 @@ const deposit_event_abi = [
     {"type":"address","name":"toToken","internalType":"address","indexed":false}
 ];
 
+const BridgeToContract_event_abi = [
+    {"type":"address","name":"token","internalType":"address","indexed":true},
+    {"type":"address","name":"sender","internalType":"address","indexed":true},
+    {"type":"uint256","name":"value","internalType":"uint256","indexed":false},
+    {"type":"uint256","name":"toChainId","internalType":"uint256","indexed":false},
+    {"type":"address","name":"toToken","internalType":"address","indexed":false},
+    {"type":"address","name":"toContract","internalType":"address","indexed":false},
+    {"type":"bytes","name":"data","internalType":"bytes","indexed":false}
+];
 
 // call this function to get authorization signature
 // params: txId = deposit transaction hash, fromChainId = chain ID where transaction was sent.
@@ -98,17 +107,17 @@ async function authorize(txId, fromChainId) {
     return web3.eth.getTransactionReceipt(txId)
     .then(receipt => {
         if (receipt && receipt.status) {
+            if (lastBlock - receipt.blockNumber < 12) { // require at least 12 confirmation
+                let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of 12";
+                console.log(msg);
+                return {isSuccess: false, message: msg};
+            }
             for (var i = 0; i < receipt.logs.length; i++) {
                 let element = receipt.logs[i];
-                if (element.topics[0] == "0xf5dd9317b9e63ac316ce44acc85f670b54b339cfa3e9076e1dd55065b922314b"
+                if (element.topics[0] == "0xf5dd9317b9e63ac316ce44acc85f670b54b339cfa3e9076e1dd55065b922314b"  // Deposit
                     && element.address == bridgeContract
                     && element.transactionHash == txId) 
                 {
-                    if (lastBlock - receipt.blockNumber < 12) { // require at least 12 confirmation
-                        let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of 12";
-                        console.log(msg);
-                        return {isSuccess: false, message: msg};
-                    }
                     element.topics.shift(); // remove 
                     let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
                     //console.log(p);
@@ -119,9 +128,22 @@ async function authorize(txId, fromChainId) {
                     let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: bridgeContracts[p.toChainId]};
                     //console.log(ret);
                     return ret;
+                } else if (element.topics[0] == "0x8e3af9ffa3a105195ae58520a6e3ab241268521cd0a0ca519896e650d4fbebe4"   // BridgeToContract
+                    && element.address == bridgeContract
+                    && element.transactionHash == txId) 
+                {
+                    element.topics.shift(); // remove 
+                    var p = web3.eth.abi.decodeLog(BridgeToContract_event_abi, element.data, element.topics);
+                    //console.log(p);
+                    var messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId, p.toContract, p.data);
+                    //console.log(messageHash);
+                    sig = web3.eth.accounts.sign(messageHash, pk);
+                    //console.log(sig);
+                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, toContract: p.toContract, data: p.data, bridge: bridgeContracts[p.toChainId]};
+                    //console.log(ret);
+                    return ret;
                 }
             }
-    
         }
         let msg = "Wrong transaction hash:" + txId;
         console.log(msg);
