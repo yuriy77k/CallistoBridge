@@ -13,6 +13,7 @@ const bridgeContracts = {
   "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
   "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
   "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
+  "199": "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BTTC main net
 };
 
 const Networks = {
@@ -23,6 +24,7 @@ const Networks = {
   "42" : "Ethereum testnet Kovan",  // ETH KOVAN test net 
   "1" : "Ethereum",   // ETH main net
   "61" : "Ethereum Classic", // ETC main net
+  "199": "BitTorrent Chain", // BTTC main net
 };
 
 const Tokens = {
@@ -55,7 +57,19 @@ const Tokens = {
     "1" : "0xdAC17F958D2ee523a2206206994597C13D831ec7",   // ETH main net
     "56" : "0x55d398326f99059ff775485246999027b3197955",  // BSC main net
     "820": "0xbf6c50889d3a620eb42c0f188b65ade90de958c4"   // CLO main net
-  }
+  },
+  "Cake" : {
+    "820": "0xCC2D45F7fE1b8864a13F5D552345eB3f5a005FEd",  // CLO main net
+    "56" : "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"   // BSC main net
+  },
+  "TWT" : {
+    "820": "0xCC099e75152ACCda96d54FAbaf6e333ca44AD86e",  // CLO main net
+    "56" : "0x4b0f1812e5df2a09796481ff14017e6005508003"   // BSC main net
+  },
+  "WSG" : {
+    "820": "0xccEbb9f0EE6D720DebccEE42f52915037f774A70",  // CLO main net
+    "56" : "0xa58950f05fea2277d2608748412bf9f802ea4901"   // BSC main net
+  },
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)
 

@@ -54,6 +54,7 @@ const bridgeContracts = {
     "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
     "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
     "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
+    "199": "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BTTC main net
 };
 
 const providers = {
@@ -64,6 +65,7 @@ const providers = {
     "42" : "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",  // ETH KOVAN test net 
     "1" : "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",   // ETH main net
     "61" : "https://www.ethercluster.com/etc", // ETC main net
+    "199": "https://rpc.bt.io/",  // BTTC main net
 }
 
 const deposit_event_abi = [
