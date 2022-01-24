@@ -34,8 +34,9 @@ const Tokens = {
     "97" : "0xCCEA50dDA26F141Fcc41Ad7e94755936d8C57e28",  // BSC test net
     "56" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",  // BSC main net
     "42" : "0xcc48d2250b55b82696978184e75811f1c0ef383f",  // ETH KOVAN test net 
-    "1" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",   // ETH main net
-    "61" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53"   // ETC main net
+    "1"  : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",  // ETH main net
+    "61" : "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53",  // ETC main net
+    "199": "0xCcbf1C9E8b4f2cDF3Bfba1098b8f56f97d219D53"   // BTTC main net
   },
   "ETH" : {
     //"820": "0xcC00860947035a26Ffe24EcB1301ffAd3a89f910",  // CLO main net - OLD pair to ERC20
@@ -70,6 +71,10 @@ const Tokens = {
     "820": "0xccEbb9f0EE6D720DebccEE42f52915037f774A70",  // CLO main net
     "56" : "0xa58950f05fea2277d2608748412bf9f802ea4901"   // BSC main net
   },
+  "BTTC" : {
+    "820": "0xCc99C6635Fae4DAcF967a3fc2913ab9fa2b349C3",  // CLO main net
+    "199": "0x0000000000000000000000000000000000000003"   // BTTC main net
+  },  
 }
 // var chainId = parseInt(window.ethereum.chainId, 16)
 

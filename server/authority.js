@@ -46,6 +46,17 @@ require('dotenv').config(); // if use .env file for enviroment variables
 
 const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
+const blockConfirmations = {
+    "20729" : 1, // CLO test net
+    "820" : 1, // CLO main net
+    "97" : 1,  // BSC test net
+    "56" : 1,  // BSC main net
+    "42" : 1,  // ETH KOVAN test net 
+    "1"  : 1,   // ETH main net
+    "61" : 1,  // ETC main net
+    "199": 1,  // BTTC main net    
+}
+
 const bridgeContracts = {
     "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
     "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
@@ -109,8 +120,8 @@ async function authorize(txId, fromChainId) {
     return web3.eth.getTransactionReceipt(txId)
     .then(receipt => {
         if (receipt && receipt.status) {
-            if (lastBlock - receipt.blockNumber < 12) { // require at least 12 confirmation
-                let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of 12";
+            if (lastBlock - receipt.blockNumber < blockConfirmations[fromChainId]) { // require at least 12 confirmation
+                let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of " + blockConfirmations[fromChainId];
                 console.log(msg);
                 return {isSuccess: false, message: msg};
             }
