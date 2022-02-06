@@ -48,13 +48,13 @@ const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
 const blockConfirmations = {
     "20729" : 1, // CLO test net
-    "820" : 1, // CLO main net
+    "820" : 64, // CLO main net
     "97" : 1,  // BSC test net
-    "56" : 1,  // BSC main net
+    "56" : 3,  // BSC main net
     "42" : 1,  // ETH KOVAN test net 
-    "1"  : 1,   // ETH main net
-    "61" : 1,  // ETC main net
-    "199": 1,  // BTTC main net    
+    "1"  : 4,   // ETH main net
+    "61" : 12,  // ETC main net
+    "199": 4,  // BTTC main net    
 }
 
 const bridgeContracts = {
