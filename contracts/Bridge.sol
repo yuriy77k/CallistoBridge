@@ -12,6 +12,10 @@ interface IBEP20TokenCloned {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
+interface IContractCaller {
+    function callContract(address user, address token, uint256 value, address toContract, bytes memory data) external payable;
+}
+
 /**
  * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
  * deploying minimal proxy contracts, also known as "clones".
@@ -311,10 +315,13 @@ contract CallistoBridge is Ownable {
     Upgrade public upgradeData;
     address public founders;
     address public requiredAuthority;   // authority address that MUST sign swap transaction
+    address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
+    uint256 public functionMapping;    // bitmap of locked functions (one bit per function)
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
     event SetThreshold(uint256 threshold);
+    event SetContractCaller(address newContractCaller);
     event Deposit(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken);
     event Claim(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken);
     event Fee(address indexed sender, uint256 fee);
@@ -414,6 +421,10 @@ contract CallistoBridge is Ownable {
         emit Frozen(false);
     }
 
+    function lockFunctions(uint256 _functionMapping) external onlyOwner {
+        functionMapping = _functionMapping;
+    }
+
     // add authority
     function setFreezer(address freezer, bool isActive) external onlyOwner {
         require(freezer != address(0), "Zero address");
@@ -453,6 +464,12 @@ contract CallistoBridge is Ownable {
         require(threshold != 0 && threshold <= authorities.length(), "Wrong threshold");
         threshold = _threshold;
         emit SetThreshold(threshold);
+    }
+
+    // set contractCaller address
+    function setContractCaller(address newContractCaller) external onlyOwner onlySetup {
+        contractCaller = newContractCaller;
+        emit SetContractCaller(newContractCaller);
     }
 
     function disableSetupMode() external onlyOwner {
@@ -543,6 +560,7 @@ contract CallistoBridge is Ownable {
         payable
         notFrozen
     {
+        require(functionMapping & 2 == 0, "locked");    // check bit 1
         require(receiver != address(0), "Incorrect receiver address");
         address pair_token = _deposit(token, value, toChainId);
         emit BridgeToContract(token, receiver, value, toChainId, pair_token, toContract, data);
@@ -562,9 +580,11 @@ contract CallistoBridge is Ownable {
         external
         notFrozen
     {
+        require(functionMapping & 4 == 0, "locked");    // check bit 2
         require(!isTxProcessed[fromChainId][txId], "Transaction already processed");
         Token memory pair = tokenPair[fromChainId][token];
         require(pair.token != address(0), "There is no pair");
+        {
         isTxProcessed[fromChainId][txId] = true;
 
         // Check signature
@@ -585,30 +605,19 @@ contract CallistoBridge is Ownable {
         }
         require(threshold <= uniqSig, "Require more signatures");
         require(must == address(0), "The required authority does not sign");
-
+        }
         // Call toContract
         if(isContract(toContract) && toContract != address(this)) {
             if (token <= MAX_NATIVE_COINS) {
-                uint balance = address(this).balance;
-                (bool success,) = toContract.call{value: value}(data); // transfer coin back to sender (to address(this)) is not supported
-                if (!success && balance == address(this).balance) { // double check the coin was not spent
-                    to.safeTransferETH(value);  // send coin to user
-                }
+                IContractCaller(contractCaller).callContract{value: value}(to, token, value, toContract, data);
             } else {
                 if(pair.isWrapped) {
-                    IBEP20TokenCloned(token).mint(address(this), value);
+                    IBEP20TokenCloned(token).mint(toContract, value);
                 } else {
                     tokenDeposits[token] -= value;
+                    token.safeTransfer(toContract, value);
                 }
-                if (IBEP20TokenCloned(token).allowance(address(this), toContract) == 0) { // should be zero
-                    IBEP20TokenCloned(token).approve(toContract, value);
-                    (bool success,) = toContract.call{value: 0}(data);
-                    value = IBEP20TokenCloned(token).allowance(address(this), toContract); // unused amount (the rest) = allowance
-                }
-                if (value != 0) {   // if not all value used reset approvement
-                    IBEP20TokenCloned(token).approve(toContract, 0);
-                    token.safeTransfer(to, value);   // send to user rest of tokens
-                }                
+                IContractCaller(contractCaller).callContract(to, token, value, toContract, data);               
             }
         } else {    // if not contract
             if (token <= MAX_NATIVE_COINS) {
@@ -635,6 +644,7 @@ contract CallistoBridge is Ownable {
         payable
         notFrozen
     {
+        require(functionMapping & 1 == 0, "locked");    // check bit 0
         require(receiver != address(0), "Incorrect receiver address");
         address pair_token = _deposit(token, value, toChainId);
         emit Deposit(token, receiver, value, toChainId, pair_token);
