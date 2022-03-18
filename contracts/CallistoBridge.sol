@@ -634,10 +634,10 @@ contract CallistoBridge is Ownable {
                 IContractCaller(contractCaller).callContract{value: value}(to, token, value, toContract, data);
             } else {
                 if(pair.isWrapped) {
-                    IERC223TokenCloned(token).mint(toContract, value);
+                    IERC223TokenCloned(token).mint(contractCaller, value);
                 } else {
                     tokenDeposits[token] -= value;
-                    token.safeTransfer(toContract, value);
+                    token.safeTransfer(contractCaller, value);
                 }
                 IContractCaller(contractCaller).callContract(to, token, value, toContract, data);               
             }
