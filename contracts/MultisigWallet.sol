@@ -228,6 +228,10 @@ contract MultisigWallet {
 
     // allow receive ERC223 tokens
     function tokenReceived(address _from, uint _value, bytes calldata _data) external {} 
+    // allow receive ERC721 tokens (NFT)
+    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external pure returns(bytes4) {
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+    }
     // allow receive coin
     receive() external payable {}
 }

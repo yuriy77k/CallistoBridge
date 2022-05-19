@@ -464,9 +464,9 @@ contract CallistoBridge is Ownable {
 
     // set threshold - minimum number of signatures required to approve swap
     function setThreshold(uint256 _threshold) external onlyOwner onlySetup {
-        require(threshold != 0 && threshold <= authorities.length(), "Wrong threshold");
+        require(_threshold != 0 && _threshold <= authorities.length(), "Wrong threshold");
         threshold = _threshold;
-        emit SetThreshold(threshold);
+        emit SetThreshold(_threshold);
     }
 
     // set contractCaller address

@@ -18,6 +18,8 @@
 */
 
 const auth = require("./authority.js");
+const claimer = require("./claimer.js");
+
 const http = require('http');
 const url = require('url');
 const port = 3000;
@@ -31,13 +33,32 @@ const requestHandler = (request, response) => {
     response.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
 
 
-    // if process request to authorize swap
+    // if request to authorize swap
     if (url.pathname == "/auth") {
         //console.log(request.url);
         let params = url.searchParams;
         let txId = params.get('tx');    // transaction ID
         let fromChainId = params.get('chain'); // transaction chain ID
         auth.authorize(txId, fromChainId)
+        .then(resp => {
+            //console.log(resp);
+            response.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
+            response.end(JSON.stringify(resp));
+
+        })
+        .catch(err => {
+            response.writeHead(404, {'Content-Type': 'text/html'});
+            response.end(err.toString());            
+        })
+    }
+    else 
+    // if request to claim behalf
+    if (url.pathname == "/claim") {
+        //console.log(request.url);
+        let params = url.searchParams;
+        let txId = params.get('tx');    // transaction ID
+        let fromChainId = params.get('chain'); // transaction chain ID
+        claimer.claim(txId, fromChainId)
         .then(resp => {
             //console.log(resp);
             response.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
