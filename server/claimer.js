@@ -58,7 +58,7 @@ const minimalBalance = {
   "42" : 1e15,  // ETH KOVAN test net 
   "1"  : 0,   // ETH main net
   "61" : 0,  // ETC main net
-  "199": 0,  // BTTC main net    
+  "199": 50*1e18,  // BTTC main net    
 }
 
 async function fetch(url) {
