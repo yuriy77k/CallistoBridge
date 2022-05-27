@@ -1,19 +1,43 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-interface IBEP20TokenCloned {
-    // initialize cloned token just for BEP20TokenCloned
-    function initialize(address newOwner, string calldata name, string calldata symbol, uint8 decimals) external;
-    function mint(address user, uint256 amount) external;
-    function burnFrom(address account, uint256 amount) external returns(bool);
-    function burn(uint256 amount) external returns(bool);
-    function balanceOf(address account) external view returns (uint256);
-    function allowance(address _owner, address spender) external view returns (uint256);
-    function approve(address spender, uint256 amount) external returns (bool);
+/*
+interface IERC721Cloned {
+    function initialize(
+        string memory name_,    // NFT collection name
+        string memory symbol_,  // NFT collection symbol
+        string memory baseURI_, // baseURI (from origin NFT contract)
+        address origin_,        // Address of origin NFT contract
+        uint256 chainID_        // Chain ID where origin NFT contract located
+    ) external;
+    function mint(address to, uint256 tokenID) external;
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+}
+*/
+interface IHybridNFTCloned {
+    function initialize(
+        string memory name_,    // NFT collection name
+        string memory symbol_,  // NFT collection symbol
+        string memory baseURI_, // baseURI (from origin NFT contract)
+        address feeReceiver_,   // fee receiver (from origin NFT contract)
+        uint256 defaultFee_,    // default fee (from origin NFT contract)
+        address origin_,        // Address of origin NFT contract
+        uint256 chainID_        // Chain ID where origin NFT contract located
+    ) external;
+    function mint(address to, uint256 tokenID) external;
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
 }
 
-interface IContractCaller {
-    function callContract(address user, address token, uint256 value, address toContract, bytes memory data) external payable;
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
 }
 
 /**
@@ -96,31 +120,6 @@ library Clones {
     }
 }
 
-// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
-library TransferHelper {
-    function safeApprove(address token, address to, uint value) internal {
-        // bytes4(keccak256(bytes('approve(address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');
-    }
-
-    function safeTransfer(address token, address to, uint value) internal {
-        // bytes4(keccak256(bytes('transfer(address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
-    }
-
-    function safeTransferFrom(address token, address from, address to, uint value) internal {
-        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');
-    }
-
-    function safeTransferETH(address to, uint value) internal {
-        (bool success,) = to.call{value:value}(new bytes(0));
-        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');
-    }
-}
 
 /**
  * @dev Library for managing
@@ -284,13 +283,10 @@ abstract contract Ownable {
 
 }
 
-contract CallistoBridge is Ownable {
-    using TransferHelper for address;
+contract CallistoNFTBridge is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet authorities; // authority has to sign claim transaction (message)
 
-    address constant MAX_NATIVE_COINS = address(31); // addresses from address(1) to MAX_NATIVE_COINS are considered as native coins 
-                                            // CLO = address(1)
     struct Token {
         address token;  // foreign token address
         bool isWrapped; // is native token wrapped of foreign
@@ -301,28 +297,27 @@ contract CallistoBridge is Ownable {
         uint64  validFrom;
     }
 
-    uint256 public threshold;   // minimum number of signatures required to approve swap
-    address public tokenImplementation;    // implementation of wrapped token
-    address public feeTo; // send fee to this address
-    bool public frozen; // if frozen - swap will not work
-    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
-    mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
-    mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
-    mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
-    mapping(address => uint256) public tokenDeposits;  // amount of tokens were deposited by users
-    mapping(address => bool) public isFreezer;  // addresses that have right to freeze contract 
-    uint256 public setupMode;   // time when setup mode will start, 0 if disable
     Upgrade public upgradeData;
+    uint256 public setupMode;   // time when setup mode will start, 0 if disable
     address public founders;
     address public requiredAuthority;   // authority address that MUST sign swap transaction
-    address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
-    uint256 public functionMapping;    // bitmap of locked functions (one bit per function)
+    uint256 public threshold;   // minimum number of signatures required to approve swap
+    //address public ERC721Implementation;    // implementation of wrapped token
+    address public HybridNFTImplementation;    // implementation of wrapped token
+    address public feeTo; // send fee to this address
+    bool public frozen; // if frozen - swap will not work
+
+    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
+    mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
+    mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => foreign Token struct
+    mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
+    //mapping(address => uint256) public tokenDeposits;  // amount of tokens were deposited by users
+    mapping(address => bool) public isFreezer;  // addresses that have right to freeze contract 
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
     event SetThreshold(uint256 threshold);
-    event SetContractCaller(address newContractCaller);
-    event Deposit(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken);
+    event Deposit(address indexed token, address indexed sender, uint256 tokenId, uint256 toChainId, address toToken);
     event Claim(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken);
     event Fee(address indexed sender, uint256 fee);
     event CreatePair(address toToken, bool isWrapped, address fromToken, uint256 fromChainId);
@@ -331,17 +326,16 @@ contract CallistoBridge is Ownable {
     event SetFreezer(address freezer, bool isActive);
     event SetupMode(uint time);
     event UpgradeRequest(address newContract, uint256 validFrom);
-    event BridgeToContract(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken, address toContract, bytes data);
-    event ClaimToContract(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken, address toContract);
 
     // run only once from proxy
-    function initialize(address newOwner, address newFounders, address _tokenImplementation) external {
+    function initialize(address newOwner, address newFounders, address _HybridNFTImplementation) external {
         require(newOwner != address(0) && newFounders != address(0) && founders == address(0)); // run only once
         _owner = newOwner;
         founders = newFounders;
         emit OwnershipTransferred(address(0), msg.sender);
-        require(_tokenImplementation != address(0), "Wrong tokenImplementation");
-        tokenImplementation = _tokenImplementation;
+        require(_HybridNFTImplementation != address(0), "Wrong Implementation");
+        //ERC721Implementation = _ERC721Implementation;
+        HybridNFTImplementation = _HybridNFTImplementation;
         feeTo = msg.sender;
         threshold = 1;
         setupMode = 1; // allow setup after deployment
@@ -361,8 +355,10 @@ contract CallistoBridge is Ownable {
 
     // allowed only in setup mode
     modifier onlySetup() {
+        {
         uint256 mode = setupMode; //use local variable to save gas
         require(mode != 0 && mode < block.timestamp, "Not in setup mode");
+        }
         _;
     }
 
@@ -421,10 +417,6 @@ contract CallistoBridge is Ownable {
         emit Frozen(false);
     }
 
-    function lockFunctions(uint256 _functionMapping) external onlyOwner {
-        functionMapping = _functionMapping;
-    }
-
     // add authority
     function setFreezer(address freezer, bool isActive) external onlyOwner {
         require(freezer != address(0), "Zero address");
@@ -463,13 +455,7 @@ contract CallistoBridge is Ownable {
     function setThreshold(uint256 _threshold) external onlyOwner onlySetup {
         require(_threshold != 0 && _threshold <= authorities.length(), "Wrong threshold");
         threshold = _threshold;
-        emit SetThreshold(_threshold);
-    }
-
-    // set contractCaller address
-    function setContractCaller(address newContractCaller) external onlyOwner onlySetup {
-        contractCaller = newContractCaller;
-        emit SetContractCaller(newContractCaller);
+        emit SetThreshold(threshold);
     }
 
     function disableSetupMode() external onlyOwner {
@@ -485,7 +471,7 @@ contract CallistoBridge is Ownable {
     // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
     function calculateNonce() external view returns(uint256 nonce, address addr) {
         nonce = wrapNonce;
-        address implementation = tokenImplementation;
+        address implementation = HybridNFTImplementation;
         while (true) {
             nonce++;
             addr = Clones.predictDeterministicAddress(implementation, bytes32(nonce));
@@ -494,19 +480,31 @@ contract CallistoBridge is Ownable {
         }
     }
 
-    function rescueERC20(address token, address to) external onlyOwner {
-        uint256 value = IBEP20TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
-        token.safeTransfer(to, value);
-        emit RescuedERC20(token, to, value);
+
+    function safeTransfer(address token, address to, uint value) internal {
+        // bytes4(keccak256(bytes('transfer(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
     }
 
-    // Create wrapped token for foreign token
-    function createWrappedToken(
+    function safeTransferETH(address to, uint value) internal {
+        (bool success,) = to.call{value:value}(new bytes(0));
+        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');
+    }
+
+    function rescueERC20(address token, address to) external onlyOwner {
+        uint256 value = IERC20(token).balanceOf(address(this));
+        safeTransfer(token, to, value);
+        emit RescuedERC20(token, to, value);
+    }
+/*
+    // Create wrapped ERC721 token for foreign token
+    function createWrappedERC721(
         address fromToken,      // foreign token address
         uint256 fromChainId,    // foreign chain ID where token deployed
         string memory name,     // wrapped token name
         string memory symbol,   // wrapped token symbol
-        uint8 decimals,         // wrapped token decimals (should be the same as in original token)
+        string memory baseURI,  // baseURI (from origin NFT contract)
         uint256 nonce           // nonce to create wrapped token address begin with 0xCC.... 
     )
         external
@@ -517,8 +515,38 @@ contract CallistoBridge is Ownable {
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
         require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
         wrapNonce = nonce;
-        address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
-        IBEP20TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
+        address wrappedToken = Clones.cloneDeterministic(ERC721Implementation, bytes32(nonce));
+        IERC721Cloned(wrappedToken).initialize(name, symbol, baseURI, fromToken, fromChainId);
+
+        tokenPair[fromChainId][wrappedToken] = Token(fromToken, address(0));
+        tokenForeign[fromChainId][fromToken] = wrappedToken;
+        emit CreateWrappedToken(wrappedToken, false, fromToken, fromChainId); //wrappedToken - wrapped token contract address
+    }
+*/
+    // Create wrapped Hybrid token for foreign token
+    function createWrappedHybrid(
+        address fromToken,      // foreign token address
+        uint256 fromChainId,    // foreign chain ID where token deployed
+        string memory name,     // wrapped token name
+        string memory symbol,   // wrapped token symbol
+        string memory baseURI,  // baseURI (from origin NFT contract)
+        address feeReceiver,    // fee receiver (from origin NFT contract)
+        uint256 defaultFee,     // default fee (from origin NFT contract)
+        uint256 nonce           // nonce to create wrapped token address begin with 0xCC.... 
+    )
+        external
+        onlyOwner
+        onlySetup
+    {
+        require(fromToken != address(0), "Wrong token address");
+        require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
+        {
+        require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
+        wrapNonce = nonce;
+        }
+        address wrappedToken = Clones.cloneDeterministic(HybridNFTImplementation, bytes32(nonce));
+        IHybridNFTCloned(wrappedToken).initialize(name, symbol, baseURI, feeReceiver, defaultFee, fromToken, fromChainId);
+
         tokenPair[fromChainId][wrappedToken] = Token(fromToken, true);
         tokenForeign[fromChainId][fromToken] = wrappedToken;
         emit CreatePair(wrappedToken, true, fromToken, fromChainId); //wrappedToken - wrapped token contract address
@@ -527,7 +555,7 @@ contract CallistoBridge is Ownable {
     /**
      * @dev Create pair between existing tokens on native and foreign chains
      * @param toToken token address on native chain
-     * @param fromToken token address on foreign chain
+     * @param fromToken wrapped token address on foreign chain (hybrid or erc721)
      * @param fromChainId foreign chain ID
      * @param isWrapped `true` if `toToken` is our wrapped token otherwise `false`
      */
@@ -544,160 +572,82 @@ contract CallistoBridge is Ownable {
      * @param fromChainId foreign chain ID
      */
     function deletePair(address toToken, uint256 fromChainId) external onlyOwner onlySetup {
+        address fromToken = tokenPair[fromChainId][toToken].token;
         delete tokenPair[fromChainId][toToken];
+        delete tokenForeign[fromChainId][fromToken];
     }
 
-    // Move tokens through the bridge and call the contract with 'data' parameters on the destination chain
-    function bridgeToContract(
+    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external returns(bytes4) {
+        if (_data.length == 64) {    // allow to swap using `safeTransferFrom` with ABI encoded `receiver` and `toChainId` into `_data`
+            address token = msg.sender;
+            (
+            address receiver,   // address of token receiver on destination chain
+            uint256 toChainId   // destination chain Id where will be claimed tokens
+            ) = abi.decode(_data, (address, uint256));
+            require(receiver != address(0), "Incorrect receiver address");
+            address pair_token = tokenPair[toChainId][token].token;
+            require(pair_token != address(0), "There is no pair");
+
+            emit Deposit(token, receiver, _tokenId, toChainId, pair_token);
+        } else {
+            require(_operator == address(this), "Only bridge operator");
+        }
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+    }
+
+    function depositNFT(
         address receiver,   // address of token receiver on destination chain
-        address token,      // token that user send (if token address < 32, then send native coin)
-        uint256 value,      // tokens value
-        uint256 toChainId,  // destination chain Id where will be claimed tokens
-        address toContract, // this contract will be called on destination chain
-        bytes memory data   // this data will be passed to contract call (ABI encoded parameters)
-    )
-        external
-        payable
-        notFrozen
-    {
-        require(functionMapping & 2 == 0, "locked");    // check bit 1
-        require(receiver != address(0), "Incorrect receiver address");
-        address pair_token = _deposit(token, value, toChainId);
-        emit BridgeToContract(token, receiver, value, toChainId, pair_token, toContract, data);
-    }
-
-    // Claim tokens from the bridge and call the contract with 'data' parameters
-    function claimToContract(
-        address token,          // token to receive
-        bytes32 txId,           // deposit transaction hash on fromChain 
-        address to,             // user address
-        uint256 value,          // value of tokens
-        uint256 fromChainId,    // chain ID where user deposited
-        address toContract,     // this contract will be called on destination chain
-        bytes memory data,      // this data will be passed to contract call (ABI encoded parameters)
-        bytes[] memory sig      // authority signatures
-    ) 
-        external
-        notFrozen
-    {
-        require(functionMapping & 4 == 0, "locked");    // check bit 2
-        require(!isTxProcessed[fromChainId][txId], "Transaction already processed");
-        Token memory pair = tokenPair[fromChainId][token];
-        require(pair.token != address(0), "There is no pair");
-        {
-        isTxProcessed[fromChainId][txId] = true;
-
-        // Check signature
-        address must = requiredAuthority;
-        bytes32 messageHash = keccak256(abi.encodePacked(token, to, value, txId, fromChainId, block.chainid, toContract, data));
-        messageHash = prefixed(messageHash);
-        uint256 uniqSig;
-        uint256 set;    // maximum number of authorities is 255
-        for (uint i = 0; i < sig.length; i++) {
-            address authority = recoverSigner(messageHash, sig[i]);
-            if (authority == must) must = address(0);
-            uint256 index = authorities.indexOf(authority);
-            uint256 mask = 1 << index;
-            if (index != 0 && (set & mask) == 0 ) {
-                set |= mask;
-                uniqSig++;
-            }
-        }
-        require(threshold <= uniqSig, "Require more signatures");
-        require(must == address(0), "The required authority does not sign");
-        }
-        // Call toContract
-        if(isContract(toContract) && toContract != address(this)) {
-            if (token <= MAX_NATIVE_COINS) {
-                IContractCaller(contractCaller).callContract{value: value}(to, token, value, toContract, data);
-            } else {
-                if(pair.isWrapped) {
-                    IBEP20TokenCloned(token).mint(contractCaller, value);
-                } else {
-                    tokenDeposits[token] -= value;
-                    token.safeTransfer(contractCaller, value);
-                }
-                IContractCaller(contractCaller).callContract(to, token, value, toContract, data);               
-            }
-        } else {    // if not contract
-            if (token <= MAX_NATIVE_COINS) {
-                to.safeTransferETH(value);
-            } else {
-                if(pair.isWrapped) {
-                    IBEP20TokenCloned(token).mint(to, value);
-                } else {
-                    tokenDeposits[token] -= value;
-                    token.safeTransfer(to, value);
-                }
-            }
-        }
-        emit ClaimToContract(token, to, value, txId, fromChainId, pair.token, toContract);
-    }
-
-    function depositTokens(
-        address receiver,   // address of token receiver on destination chain
-        address token,      // token that user send (if token address < 32, then send native coin)
-        uint256 value,      // tokens value
+        address token,      // NFT token that user send
+        uint256 tokenId,    // token ID
         uint256 toChainId   // destination chain Id where will be claimed tokens
     ) 
         external
         payable
         notFrozen
     {
-        require(functionMapping & 1 == 0, "locked");    // check bit 0
         require(receiver != address(0), "Incorrect receiver address");
-        address pair_token = _deposit(token, value, toChainId);
-        emit Deposit(token, receiver, value, toChainId, pair_token);
+        address pair_token = _deposit(token, tokenId, toChainId);
+        emit Deposit(token, receiver, tokenId, toChainId, pair_token);
     }
     
-    function depositTokens(
-        address token,      // token that user send (if token address < 32, then send native coin)
-        uint256 value,      // tokens value
+    function depositNFT(
+        address token,      // NFT token that user send
+        uint256 tokenId,    // token ID
         uint256 toChainId   // destination chain Id where will be claimed tokens
     ) 
         external
         payable
         notFrozen
     {
-        address pair_token = _deposit(token, value, toChainId);
-        emit Deposit(token, msg.sender, value, toChainId, pair_token);
+        address pair_token = _deposit(token, tokenId, toChainId);
+        emit Deposit(token, msg.sender, tokenId, toChainId, pair_token);
     }
     
     function _deposit(
         address token,      // token that user send (if token address < 32, then send native coin)
-        uint256 value,      // tokens value
+        uint256 tokenId,      // tokens value
         uint256 toChainId   // destination chain Id where will be claimed tokens
     ) 
         internal 
         returns (address pair_token) 
     {
-        Token memory pair = tokenPair[toChainId][token];
-        require(pair.token != address(0), "There is no pair");
-        pair_token = pair.token;
-        uint256 fee = msg.value;
-        if (token <= MAX_NATIVE_COINS) {
-            require(value <= msg.value, "Wrong value");
-            fee -= value;
-        } else {
-            if(pair.isWrapped) {
-                IBEP20TokenCloned(token).burnFrom(msg.sender, value);
-            } else {
-                tokenDeposits[token] += value;
-                token.safeTransferFrom(msg.sender, address(this), value);
-            }
-        }
-        if (fee != 0) {
-            feeTo.safeTransferETH(fee);
-            emit Fee(msg.sender, fee);
+        pair_token = tokenPair[toChainId][token].token;
+        require(pair_token != address(0), "There is no pair");
+
+        IHybridNFTCloned(token).safeTransferFrom(msg.sender, address(this), tokenId);
+
+        if (msg.value != 0) {
+            safeTransferETH(feeTo, msg.value);
+            emit Fee(msg.sender, msg.value);
         }
     }
 
     // claim
     function claim(
-        address token,          // token to receive
+        address token,          // NFT token contract address to receive
         bytes32 txId,           // deposit transaction hash on fromChain 
         address to,             // user address
-        uint256 value,          // value of tokens
+        uint256 tokenId,        // NFT token ID
         uint256 fromChainId,    // chain ID where user deposited
         bytes[] memory sig      // authority signatures
     ) 
@@ -709,7 +659,7 @@ contract CallistoBridge is Ownable {
         require(pair.token != address(0), "There is no pair");
         isTxProcessed[fromChainId][txId] = true;
         address must = requiredAuthority;
-        bytes32 messageHash = keccak256(abi.encodePacked(token, to, value, txId, fromChainId, block.chainid));
+        bytes32 messageHash = keccak256(abi.encodePacked(token, to, tokenId, txId, fromChainId, block.chainid));
         messageHash = prefixed(messageHash);
         uint256 uniqSig;
         uint256 set;    // maximum number of authorities is 255
@@ -726,17 +676,12 @@ contract CallistoBridge is Ownable {
         require(threshold <= uniqSig, "Require more signatures");
         require(must == address(0), "The required authority does not sign");
 
-        if (token <= MAX_NATIVE_COINS) {
-            to.safeTransferETH(value);
-        } else {
             if(pair.isWrapped) {
-                IBEP20TokenCloned(token).mint(to, value);
+                IHybridNFTCloned(token).mint(to, tokenId);
             } else {
-                tokenDeposits[token] -= value;
-                token.safeTransfer(to, value);
+                IHybridNFTCloned(token).safeTransferFrom(address(this), to, tokenId);
             }
-        }
-        emit Claim(token, to, value, txId, fromChainId, pair.token);
+        emit Claim(token, to, tokenId, txId, fromChainId, pair.token);
     }
 
     // Signature methods

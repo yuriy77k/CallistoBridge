@@ -388,7 +388,7 @@ contract CallistoBridge is Ownable {
      */
 
     function transferOwnership(address newOwner) public {
-        require(founders == msg.sender, "Ownable: caller is not the founders");
+        require(founders == msg.sender || _owner == msg.sender, "Ownable: caller is not the founders");
         require(newOwner != address(0), "Ownable: new owner is the zero address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
