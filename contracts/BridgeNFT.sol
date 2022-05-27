@@ -659,7 +659,7 @@ contract CallistoNFTBridge is Ownable {
         require(pair.token != address(0), "There is no pair");
         isTxProcessed[fromChainId][txId] = true;
         address must = requiredAuthority;
-        bytes32 messageHash = keccak256(abi.encodePacked(token, to, tokenId, txId, fromChainId, block.chainid));
+        bytes32 messageHash = keccak256(abi.encodePacked(token, to, tokenId, txId, fromChainId, block.chainid, address(this)));
         messageHash = prefixed(messageHash);
         uint256 uniqSig;
         uint256 set;    // maximum number of authorities is 255
