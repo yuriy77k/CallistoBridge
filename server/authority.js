@@ -57,6 +57,17 @@ const blockConfirmations = {
     "199": 4,  // BTTC main net    
 }
 
+const bridgeNFTContracts = {
+    "20729" : "0xe96E157d994300B50073559820Fe49a015ecEf1E", // CLO test net
+    "820" : "", // CLO main net
+    "97" : "0x5E4BC70Df60FFBBab1290bD40d87aa095230A97e",  // BSC test net
+    "56" : "",  // BSC main net
+    "42" : "",  // ETH KOVAN test net 
+    "1" : "",   // ETH main net
+    "61" : "",  // ETC main net
+    "199": "",  // BTTC main net
+};
+
 const bridgeContracts = {
     "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
     "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
@@ -99,11 +110,19 @@ const BridgeToContract_event_abi = [
 
 // call this function to get authorization signature
 // params: txId = deposit transaction hash, fromChainId = chain ID where transaction was sent.
+// isNFT: "true" for NFT bridge, "false" for token bridge
 // returns: on success {isSuccess: true, message: sig.signature};
 // on error: {isSuccess: false, message: error_message}; 
-async function authorize(txId, fromChainId) {
+async function authorize(txId, fromChainId, isNFT) {
     var provider = providers[fromChainId];
-    var bridgeContract = bridgeContracts[fromChainId];
+
+    var bridgeContract;
+    if (isNFT) {
+        bridgeContract = bridgeNFTContracts[fromChainId];
+    } else {
+        bridgeContract = bridgeContracts[fromChainId];
+    }
+    
     if (!bridgeContract) {
         let msg = "No bridgeContract for chain ID:" + fromChainId;
         //console.log(msg);
@@ -134,11 +153,19 @@ async function authorize(txId, fromChainId) {
                     element.topics.shift(); // remove 
                     let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
                     //console.log(p);
-                    let messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId);
+                    let toBridge;
+                    let messageHash;
+                    if (isNFT){
+                        toBridge = bridgeNFTContracts[p.toChainId];
+                        messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId, toBridge);
+                    } else {
+                        toBridge = bridgeContracts[p.toChainId];
+                        messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId);
+                    }
                     //console.log(messageHash);
                     sig = web3.eth.accounts.sign(messageHash, pk);
                     //console.log(sig);
-                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: bridgeContracts[p.toChainId]};
+                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: toBridge};
                     //console.log(ret);
                     return ret;
                 } else if (element.topics[0] == "0x8e3af9ffa3a105195ae58520a6e3ab241268521cd0a0ca519896e650d4fbebe4"   // BridgeToContract

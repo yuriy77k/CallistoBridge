@@ -1,15 +1,16 @@
 
 /*
     call /auth?tx= transaction hash &chain= chain Id where transaction was sent
-    for example: http://127.0.0.1:3000/auth?tx=0x67eba02bcea4aa35d64e3e5d1adcf089c42b586d57669cf683e22573358846c3&chain=97
+    for example: http://127.0.0.1:3000/auth?tx=0x160da6ff33bb23a6dd0f5c2b34326204fd812ecbe69e41e7c146797613b225dd&chain=56
     should returns JSON with bridge address to call function claim() and required parameters: 
     {
-        "isSuccess":true,
-        "signature":"0xadd441ba65cc9b691abe4208bf693afe211225da1146d6a7f26fd7acbc24475c5d230b2d9d14d2c662f06719c68fe6f749e89c1ba661703cdf3fed370967e45f1b",
-        "token":"0x0000000000000000000000000000000000000001",
-        "value":"1000000000000000000",
-        "to":"0xC7d98c4c919E93eD44755718E27b53791E7F3521",
-        "bridge":"0x05ef4B789C75c02d5182e6EfB7c64230Ec9B58b2"
+        signature	"0xaec01b5b8a339579f3e59b98f1b04ed37a864d3f90f78cefd361e5bb5514537c70d67351d1c33d0a1f0039908b1b01d7d5542fba481ddb7991b0a4776012c2811c"
+        chainId	"820"
+        to	"0xe5642553B1c96d5d9CEf55d085883Bfb5412ca39"
+        bridge	"0x9a1fc8C0369D49f3040bF49c1490E7006657ea56"
+        value	"382947884000000000000"
+        isSuccess	true
+        token	"0xbf6c50889d3a620eb42C0F188b65aDe90De958c4"
     }
 
     txId and fromChainId is the same as used for signature request.
@@ -39,7 +40,26 @@ const requestHandler = (request, response) => {
         let params = url.searchParams;
         let txId = params.get('tx');    // transaction ID
         let fromChainId = params.get('chain'); // transaction chain ID
-        auth.authorize(txId, fromChainId)
+        auth.authorize(txId, fromChainId, false)
+        .then(resp => {
+            //console.log(resp);
+            response.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
+            response.end(JSON.stringify(resp));
+
+        })
+        .catch(err => {
+            response.writeHead(404, {'Content-Type': 'text/html'});
+            response.end(err.toString());            
+        })
+    }
+    else 
+    // if request to authorize NFT bridge
+    if (url.pathname == "/authNFT") {
+        //console.log(request.url);
+        let params = url.searchParams;
+        let txId = params.get('tx');    // transaction ID
+        let fromChainId = params.get('chain'); // transaction chain ID
+        auth.authorize(txId, fromChainId, true)
         .then(resp => {
             //console.log(resp);
             response.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});

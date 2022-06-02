@@ -23,3 +23,14 @@
 - Callisto test ERC721 token (tNFT) [0x26439d6cD27783E75C9d0B27b187D6ED4991eC22](https://testnet-explorer.callisto.network/address/0x26439d6cD27783E75C9d0B27b187D6ED4991eC22/transactions)
 -  wrapped wtNFT token on BSC testnet [0xCcd99a7221C82735B40231e4359F0Ab76fad366d](https://testnet.bscscan.com/address/0xccd99a7221c82735b40231e4359f0ab76fad366d#code)
 
+## Authority
+
+Authorities endpoints are:
+
+1. `https://tyb7cgiwasnoqxybhv42hxcree0rlqdc.lambda-url.us-west-2.on.aws/authNFT?` 
+
+
+Use authority endpoint + `tx=` + transaction hash + `&chain=` + chain ID where transaction was sent
+
+For example: 
+https://tyb7cgiwasnoqxybhv42hxcree0rlqdc.lambda-url.us-west-2.on.aws/authNFT?tx=0x74f52d21780e229217d3a4e936ca9305912e25d763d652884e56f0c4327c655a&chain=97
