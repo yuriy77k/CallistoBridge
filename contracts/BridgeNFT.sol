@@ -530,8 +530,8 @@ contract CallistoNFTBridge is Ownable {
         string memory name,     // wrapped token name
         string memory symbol,   // wrapped token symbol
         string memory baseURI,  // baseURI (from origin NFT contract)
-        address feeReceiver,    // fee receiver (from origin NFT contract)
-        uint256 defaultFee,     // default fee (from origin NFT contract)
+        address feeReceiver,    // fee receiver (from origin NFT contract or address(0))
+        uint256 defaultFee,     // default fee (from origin NFT contract or 0)
         uint256 nonce           // nonce to create wrapped token address begin with 0xCC.... 
     )
         external
