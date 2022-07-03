@@ -1,5 +1,90 @@
 # NFT bridge
 
+## Documentation 
+
+### Adding NFT contract to the bridge
+
+Only bridge owner can add NTF contract to the bridge (create pair).
+
+On the chain of origin NFT contract should be called function `createPair`:
+https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/BridgeNFT.sol#L555-L562
+
+On destination chain should be called function `createWrappedHybrid`:
+https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/BridgeNFT.sol#L526-L536
+
+Notes about parameter `nonce`: if we will use here `uint256(address(NFT_origen_contract))` we will get identical address of wrapped NFT on different chains.
+
+For example: let's say original NFT contract has `address A`. We want to create wrapped NFT for this contract on `chain 1` and `chain 2`. So, if we will use `address A` as `nonce` then wrapped NFT contract will have `address B` on both chains (`chain 1` and `chain 2`).
+
+### Deposit tokens
+
+To swap tokens from one chain to another, a user calls the function [depositNFT()](https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/BridgeNFT.sol#L598-L603). 
+```Solidity
+    function depositNFT(
+        address receiver,   // address of token receiver on destination chain
+        address token,      // NFT token that user send
+        uint256 tokenId,    // token ID
+        uint256 toChainId   // destination chain Id where will be claimed tokens
+    ) 
+        external
+        payable
+        notFrozen
+```
+
+The event [Deposit(address token, address sender, uint256 tokenId, uint256 toChainId, address toToken)](https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/BridgeNFT.sol#L320) will be emitted, where:
+- `address token` - token address (if address < 32, then it's native coin).
+- `address sender` - the wallet address who sends tokens (only the same address may receive tokens on another chain).
+- `uint256 tokenId` - NFT token ID.
+- `uint256 toChainId` - chain ID where a user can claim tokens
+- `address toToken` - token address on the destination chain that user will claim.
+
+On destination chain user will receive NFT token with thw same ID as was deposited.
+
+### Claim tokens
+
+
+To get authority signature a UI has to call Authority server (servers) [server/authNFT?tx=&chain=<from_chain_id>](https://tyb7cgiwasnoqxybhv42hxcree0rlqdc.lambda-url.us-west-2.on.aws/authNFT?tx=0x74f52d21780e229217d3a4e936ca9305912e25d763d652884e56f0c4327c655a&chain=97), where: 
+- `<transaction_hash>` - deposit transaction ID (hash) 
+- `<from_chain_id>` - chain ID where deposited.
+
+it returns JSON, where:
+* if all good:
+  * `isSuccess` - true,
+  * `signature` - authority signature,
+  * `token` - token to receive,
+  * `value` - NFT token ID,
+  * `to`- receiver (user's) address,
+  * `chainId` - chain ID where to claim token,
+  * `bridge` - address of bridge on destination network.
+
+* in case of error: 
+  * `isSuccess` - false,
+  * `message` - error description
+
+Use those values to claim tokens on destination chain, the user calls the function [claim()](https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/BridgeNFT.sol#L645-L655)
+```Solidity
+    function claim(
+        address token,          // NFT token contract address to receive
+        bytes32 txId,           // deposit transaction hash on fromChain 
+        address to,             // user address
+        uint256 tokenId,        // NFT token ID
+        uint256 fromChainId,    // chain ID where user deposited
+        bytes[] memory sig      // authority signatures
+    ) 
+        external
+        notFrozen 
+```
+
+### Get info of origin NFT
+
+Users or dapps can read from wrapped NFT contract information about origen NFT contract using function [nftOrigin()](https://github.com/yuriy77k/CallistoBridge/blob/634afecadc6c6d8e9dbf09b227eb52ea15c6c951/contracts/ERC721CallistoNFTHybrid_implementation.sol#L846-L851) which returns structure:
+```Solidity
+    struct OriginNFT {
+        address contractAddress;    // Origin NFT contract address
+        uint256 chainID;            // Origin NFT contract chain ID
+    }
+```
+
 ## Testnet contracts
 
 ### Callisto test net
