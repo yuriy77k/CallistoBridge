@@ -483,8 +483,11 @@ contract CallistoBridge is Ownable {
     }
 
     // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
-    function calculateNonce() external view returns(uint256 nonce, address addr) {
-        nonce = wrapNonce;
+    function calculateNonce(uint256 startNonce) external view returns(uint256 nonce, address addr) {
+        if (startNonce == 0)
+            nonce = wrapNonce;
+        else 
+            nonce = startNonce;
         address implementation = tokenImplementation;
         while (true) {
             nonce++;
