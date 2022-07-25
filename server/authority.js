@@ -52,6 +52,7 @@ const blockConfirmations = {
     "97" : 1,  // BSC test net
     "56" : 3,  // BSC main net
     "42" : 1,  // ETH KOVAN test net 
+    "4" : 1,   // ETH RINKEBY test net
     "1"  : 4,   // ETH main net
     "61" : 500,  // ETC main net
     "199": 4,  // BTTC main net    
@@ -63,6 +64,7 @@ const bridgeNFTContracts = {
     "97" : "0x5E4BC70Df60FFBBab1290bD40d87aa095230A97e",  // BSC test net
     "56" : "",  // BSC main net
     "42" : "",  // ETH KOVAN test net 
+    "4" : "",   // ETH RINKEBY test net
     "1" : "",   // ETH main net
     "61" : "",  // ETC main net
     "199": "",  // BTTC main net
@@ -85,6 +87,7 @@ const providers = {
     "97" : "https://data-seed-prebsc-1-s2.binance.org:8545/",  // BSC test net
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
     "42" : "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",  // ETH KOVAN test net 
+    "4" : "https://rinkeby.infura.io/v3/",   // ETH RINKEBY test net
     "1" : "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",   // ETH main net
     "61" : "https://www.ethercluster.com/etc", // ETC main net
     "199": "https://rpc.bt.io/",  // BTTC main net

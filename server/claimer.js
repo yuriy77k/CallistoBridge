@@ -57,7 +57,7 @@ const minimalBalance = {
   "56" : 0,  // BSC main net
   "42" : 1e17,  // ETH KOVAN test net 
   "1"  : 0,   // ETH main net
-  "61" : 0,  // ETC main net
+  "61" : 3*1e14,  // ETC main net
   "199": 150*1e18,  // BTTC main net    
 }
 

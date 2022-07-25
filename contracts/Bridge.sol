@@ -518,7 +518,7 @@ contract CallistoBridge is Ownable {
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
-        require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
+        //require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
         wrapNonce = nonce;
         address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
         IBEP20TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);

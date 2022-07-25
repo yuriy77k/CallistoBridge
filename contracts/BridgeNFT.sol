@@ -516,8 +516,6 @@ contract CallistoNFTBridge is Ownable {
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
-        require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
-        wrapNonce = nonce;
         address wrappedToken = Clones.cloneDeterministic(ERC721Implementation, bytes32(nonce));
         IERC721Cloned(wrappedToken).initialize(name, symbol, baseURI, fromToken, fromChainId);
 
@@ -543,10 +541,10 @@ contract CallistoNFTBridge is Ownable {
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
-        {
+        /*{
         require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
         wrapNonce = nonce;
-        }
+        }*/
         address wrappedToken = Clones.cloneDeterministic(HybridNFTImplementation, bytes32(nonce));
         IHybridNFTCloned(wrappedToken).initialize(name, symbol, baseURI, feeReceiver, defaultFee, fromToken, fromChainId);
 
