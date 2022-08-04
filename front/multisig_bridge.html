@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>BUSDT Multisig</title>
+  <script src="./js/web3.min.js"></script>
+  <script src="./js/multisig_bridge.js"></script>
+  <style type="text/css">
+    .block1 { 
+     width: 200px; 
+     padding: 5px;
+     padding-right: 5px; 
+     border: solid 1px black; 
+     float: right;
+    }
+  </style>
+
+</head>
+
+<body>
+
+
+<button type="button" id="login" onclick="login()">Connect wallet</button>
+
+<p>Send 0 CLO to address: 0x6A56D0f7498C9f2AEb9Bb6892Ade5b2E0A50379F with data: <span id="msg"></span></p>
+
+
+<h3>Update bridge contract</h3>
+<button type="button" onclick="vote(0,0)">vote</button>
+
+<h3> Add Owner to multisig wallet</h3>
+Address of owner <input type="text" id="arg0_r1" size="60"></input> 
+<button type="button" onclick="vote(1,1)">vote</button>
+
+<h3> Remove Owner from multisig wallet</h3>
+Address of owner <input type="text" id="arg0_r2" size="60"></input> 
+<button type="button" onclick="vote(2,1)">vote</button>
+
+</body>
+
+</html>
