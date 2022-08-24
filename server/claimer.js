@@ -41,7 +41,7 @@ const bridgeContracts = {
 
 const providers = {
   "20729" : "https://testnet-rpc.callisto.network", // CLO test net
-  "820" : "https://clo-geth.0xinfra.com/", // CLO main net
+  "820" : "https://rpc.callisto.network/", // CLO main net
   "97" : "https://data-seed-prebsc-1-s2.binance.org:8545/",  // BSC test net
   "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
   "42" : "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",  // ETH KOVAN test net 
