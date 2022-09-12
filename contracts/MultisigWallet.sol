@@ -95,6 +95,23 @@ library EnumerableSet {
     }
 
     /**
+     * @dev Replace a current value from a set with the new value.
+     *
+     * Returns true if the value was replaced, and false if newValue already in set or currentValue is not in set
+     */
+    function replace(AddressSet storage set, address currentValue, address newValue) internal returns (bool) {
+        uint256 currentIndex = set._indexes[currentValue];
+        if (contains(set, newValue) || currentIndex == 0) {
+            return false;
+        } else {
+            set._values[currentIndex - 1] = newValue;
+            set._indexes[newValue] = currentIndex;
+            delete set._indexes[currentValue];
+            return true;
+        }
+    }
+
+    /**
      * @dev Returns true if the value is in the set. O(1).
      */
     function contains(AddressSet storage set, address value) internal view returns (bool) {
@@ -144,6 +161,7 @@ contract MultisigWallet {
     uint256 public ownersSetCounter;   // each time when change owners increase the counter
     uint256 public expirePeriod = 3 days;
     mapping(bytes32 => Ballot) public ballots;
+    uint256 public minRequired; // minimum voters required to approve. If 0 then required 50% + 1 vote.
  
     event SetOwner(address owner, bool isEnable);
     event CreateBallot(bytes32 ballotHash, uint256 expired);
@@ -155,11 +173,14 @@ contract MultisigWallet {
         _;
     }
     
-    constructor (address[] memory _owners) {
+    // add list of owners and minimum voters required to approve (if 0 then required 50% + 1 vote).
+    constructor (address[] memory _owners, uint256 _minRequired) {
         for (uint i = 0; i < _owners.length; i++) {
             require(_owners[i] != address(0), "Zero address");
             owners.add(_owners[i]);
         }
+        require(_minRequired <= owners.length(), "_minRequired too big");
+        minRequired = _minRequired;
     }
 
     // get number of owners
@@ -189,6 +210,20 @@ contract MultisigWallet {
         emit SetOwner(owner, false);
     }
     
+    // change owner address
+    function changeOwnerAddress(address currentAddress, address newAddress) external onlyThis{
+        require(newAddress != address(0), "Zero address");
+        require(owners.replace(currentAddress, newAddress), "currentAddress does not exist or newAddress already exist");
+        emit SetOwner(currentAddress, false);
+        emit SetOwner(newAddress, true);
+    }
+
+    // set minimum voters required to approve (if 0 then required 50% + 1 vote).
+    function setMinRequired(uint256 _minRequired) external onlyThis{
+        require(_minRequired <= owners.length(), "_minRequired too big");
+        minRequired = _minRequired;
+    }
+
     function setExpirePeriod(uint256 period) external onlyThis {
         require(period >= 1 days, "Too short period");  // avoid deadlock in case of set too short period
         expirePeriod = period;
@@ -211,13 +246,24 @@ contract MultisigWallet {
             b.yea += 1; // increase total votes "Yea"
         }
 
-        if (b.yea >= owners.length() / 2 + 1) {   // vote "Yea" > 50% of owners
+        if (isApproved(b.yea)) {   
             delete ballots[ballotHash];
             execute(to, value, data);
             emit Execute(ballotHash, to, value, data);
         } else {
             // update ballot
             ballots[ballotHash] = b;
+        }
+    }
+
+    function isApproved(uint256 votesYea) internal view returns(bool) {
+        // use local variables to save gas
+        uint256 _minRequired = minRequired;
+        uint256 _ownersLength = owners.length();
+        if (_minRequired == 0 || _minRequired > _ownersLength) { // to avoid deadlock minRequired can't be bigger than number of owners.
+            return (votesYea >= _ownersLength / 2 + 1); // vote "Yea" > 50% of owners
+        } else {
+            return (votesYea >= _minRequired); // vote "Yea" >= minimum required
         }
     }
 
