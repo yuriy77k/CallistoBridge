@@ -7,7 +7,7 @@
 3. Add updated `index.js` to archive [aws_lambda.zip](./aws_lambda.zip)
 
 4. Create Lambda function like on the screenshot.
-![Create Lambda Function](./lambda1.png)
+![Create Lambda Function](./lambda1.jpg)
 
 5. Copy `URL` - it's your authority API entrypoint. 
 ![API URL](./lambda2.jpg)
