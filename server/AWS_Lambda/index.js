@@ -7,7 +7,6 @@ const blockConfirmations = {
     "820" : 64, // CLO main net
     "97" : 1,  // BSC test net
     "56" : 3,  // BSC main net
-    "42" : 1,  // ETH KOVAN test net 
     "1"  : 4,   // ETH main net
     "61" : 500,  // ETC main net
     "199": 4,  // BTTC main net      
@@ -18,7 +17,6 @@ const bridgeNFTContracts = {
     "820" : "", // CLO main net
     "97" : "0x5E4BC70Df60FFBBab1290bD40d87aa095230A97e",  // BSC test net
     "56" : "",  // BSC main net
-    "42" : "",  // ETH KOVAN test net 
     "1" : "",   // ETH main net
     "61" : "",  // ETC main net
     "199": "",  // BTTC main net
@@ -29,7 +27,6 @@ const bridgeContracts = {
     "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
     "97" : "0x3777c0b1CBFC65743149D5559db0bC199B7C647c",  // BSC test net
     "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
-    "42" : "0x9b5e4b10b405cd5cd4b056a1b57c1c653379db3c",  // ETH KOVAN test net 
     "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
     "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
     "199": "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BTTC main net
@@ -41,8 +38,7 @@ const providers = {
     "97" : "https://data-seed-prebsc-1-s1.binance.org:8545/",  // BSC test net
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
     //"56" : "https://bsc-dataseed1.defibit.io/",  // BSC main net
-    "42" : "https://kovan.infura.io/v3/",  // ETH KOVAN test net 
-    "1" : "https://mainnet.infura.io/v3/",   // ETH main net
+    "1" : "https://nodes.mewapi.io/rpc/eth",   // ETH main net
     "61" : "https://www.ethercluster.com/etc", // ETC main net
     "199": "https://rpc.bt.io/",  // BTTC main net
 }
