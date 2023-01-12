@@ -620,4 +620,8 @@ contract BEP20TokenCloned is Context, IBEP20, Ownable {
     return true;
   }
 
+  function rescue(address to, bytes calldata data) external onlyOwner {
+    (bool success,) = to.call(data);
+    require(success, "call failed");
+  }
 }
