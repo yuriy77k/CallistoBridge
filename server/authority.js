@@ -53,7 +53,12 @@ const blockConfirmations = {
     "56" : 3,  // BSC main net
     "1"  : 4,   // ETH main net
     "61" : 500,  // ETC main net
-    "199": 4,  // BTTC main net    
+    "199": 4,  // BTTC main net  
+    "250" : 12, // Fantom Opera mainnet
+    "137" : 128, // Polygon Mainnet
+    "43114" : 12, // Avalanche Mainnet
+    "1313161554" : 1200, // Aurora mainnet
+    "5" : 1, // ETH Goerli testnet        
 }
 
 const bridgeNFTContracts = {
