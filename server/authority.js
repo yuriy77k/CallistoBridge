@@ -74,6 +74,11 @@ const bridgeContracts = {
     "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
     "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
     "199": "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BTTC main net
+    "250" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Fantom Opera mainnet
+    "137" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Polygon Mainnet
+    "43114" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Avalanche Mainnet
+    "1313161554" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Aurora mainnet
+    "5" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // ETH Goerli testnet
 };
 
 const providers = {
@@ -84,6 +89,11 @@ const providers = {
     "1" : "https://nodes.mewapi.io/rpc/eth",   // ETH main net
     "61" : "https://www.ethercluster.com/etc", // ETC main net
     "199": "https://rpc.bt.io/",  // BTTC main net
+    "250" : "https://rpcapi.fantom.network/", // Fantom Opera mainnet
+    "137" : "https://polygon-rpc.com/", // Polygon Mainnet
+    "43114" : "https://api.avax.network/ext/bc/C/rpc", // Avalanche Mainnet
+    "1313161554" : "https://mainnet.aurora.dev", // Aurora mainnet
+    "5" : "https://goerli.infura.io/v3/", // ETH Goerli testnet
 }
 
 const deposit_event_abi = [
