@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-interface IBEP20TokenCloned {
-    // initialize cloned token just for BEP20TokenCloned
-    function initialize(address newOwner, string calldata name, string calldata symbol, uint8 decimals) external;
+interface IERC20TokenCloned {
+    // initialize cloned token just for ERC20TokenCloned
+    function initialize(string calldata name, string calldata symbol, uint8 decimals) external;
     function mint(address user, uint256 amount) external;
     function burnFrom(address account, uint256 amount) external returns(bool);
     function burn(uint256 amount) external returns(bool);
@@ -305,7 +305,7 @@ contract CallistoBridge is Ownable {
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
     bool public frozen; // if frozen - swap will not work
-    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
+    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC....  (IS NOT USED)
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
     mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
@@ -317,6 +317,8 @@ contract CallistoBridge is Ownable {
     address public requiredAuthority;   // authority address that MUST sign swap transaction
     address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
     uint256 public functionMapping;    // bitmap of locked functions (one bit per function)
+    mapping(address => address) public migration;   // migration oldToken => newToken
+    bool public migrationSetupForbidden;    // forbid adding migration tokens
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
@@ -333,6 +335,7 @@ contract CallistoBridge is Ownable {
     event UpgradeRequest(address newContract, uint256 validFrom);
     event BridgeToContract(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken, address toContract, bytes data);
     event ClaimToContract(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken, address toContract);
+    event AddTokenMigration(address tokenFrom, address tokenTo);
 
     // run only once from proxy
     function initialize(address newOwner, address newFounders, address _tokenImplementation) external {
@@ -472,6 +475,31 @@ contract CallistoBridge is Ownable {
         emit SetContractCaller(newContractCaller);
     }
 
+    // set new token implementation
+    function setTokenImplementation(address newImplementation) external onlyOwner onlySetup {
+        require(!migrationSetupForbidden);
+        tokenImplementation = newImplementation;
+    } 
+    // setup token migration
+    function setupTokenMigration(address tokenFrom, address tokenTo) external onlyOwner onlySetup {
+        require(!migrationSetupForbidden);
+        migration[tokenFrom] = tokenTo;
+        emit AddTokenMigration(tokenFrom, tokenTo);
+    }
+
+    // forbid setup token migration
+    function forbidMigrationSetup() external onlyOwner onlySetup {
+        migrationSetupForbidden = true;
+    }
+
+    // migrate from old ERC20 implementation to the new one
+    function migrate(address token, uint value) external {
+        address newToken = migration[token];
+        require(newToken != address(0), "No migration token");
+        IERC20TokenCloned(token).burnFrom(msg.sender, value);
+        IERC20TokenCloned(newToken).mint(msg.sender, value);
+    }
+
     function disableSetupMode() external onlyOwner {
         setupMode = 0;
         emit SetupMode(0);
@@ -484,10 +512,7 @@ contract CallistoBridge is Ownable {
 
     // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
     function calculateNonce(uint256 startNonce) external view returns(uint256 nonce, address addr) {
-        if (startNonce == 0)
-            nonce = wrapNonce;
-        else 
-            nonce = startNonce;
+        nonce = startNonce;
         address implementation = tokenImplementation;
         while (true) {
             nonce++;
@@ -498,7 +523,7 @@ contract CallistoBridge is Ownable {
     }
 
     function rescueERC20(address token, address to) external onlyOwner {
-        uint256 value = IBEP20TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
+        uint256 value = IERC20TokenCloned(token).balanceOf(address(this)) - tokenDeposits[token];
         token.safeTransfer(to, value);
         emit RescuedERC20(token, to, value);
     }
@@ -518,10 +543,8 @@ contract CallistoBridge is Ownable {
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
-        //require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
-        wrapNonce = nonce;
         address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
-        IBEP20TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
+        IERC20TokenCloned(wrappedToken).initialize(name, symbol, decimals);
         tokenPair[fromChainId][wrappedToken] = Token(fromToken, true);
         tokenForeign[fromChainId][fromToken] = wrappedToken;
         emit CreatePair(wrappedToken, true, fromToken, fromChainId); //wrappedToken - wrapped token contract address
@@ -615,7 +638,7 @@ contract CallistoBridge is Ownable {
                 IContractCaller(contractCaller).callContract{value: value}(to, token, value, toContract, data);
             } else {
                 if(pair.isWrapped) {
-                    IBEP20TokenCloned(token).mint(contractCaller, value);
+                    IERC20TokenCloned(token).mint(contractCaller, value);
                 } else {
                     tokenDeposits[token] -= value;
                     token.safeTransfer(contractCaller, value);
@@ -627,7 +650,7 @@ contract CallistoBridge is Ownable {
                 to.safeTransferETH(value);
             } else {
                 if(pair.isWrapped) {
-                    IBEP20TokenCloned(token).mint(to, value);
+                    IERC20TokenCloned(token).mint(to, value);
                 } else {
                     tokenDeposits[token] -= value;
                     token.safeTransfer(to, value);
@@ -683,7 +706,7 @@ contract CallistoBridge is Ownable {
             fee -= value;
         } else {
             if(pair.isWrapped) {
-                IBEP20TokenCloned(token).burnFrom(msg.sender, value);
+                IERC20TokenCloned(token).burnFrom(msg.sender, value);
             } else {
                 tokenDeposits[token] += value;
                 token.safeTransferFrom(msg.sender, address(this), value);
@@ -733,7 +756,7 @@ contract CallistoBridge is Ownable {
             to.safeTransferETH(value);
         } else {
             if(pair.isWrapped) {
-                IBEP20TokenCloned(token).mint(to, value);
+                IERC20TokenCloned(token).mint(to, value);
             } else {
                 tokenDeposits[token] -= value;
                 token.safeTransfer(to, value);
