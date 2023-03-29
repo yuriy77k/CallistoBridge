@@ -835,8 +835,8 @@ contract CallistoBridge is Ownable {
             abi.encodePacked(token, chainID, decimals, name, symbol)
         );
         checkSignatures(address(0), messageHash, sig);
-        string memory _name = string(abi.encodePacked("d", name));
-        string memory _symbol = string(abi.encodePacked("d", symbol));
+        string memory _name = string(abi.encodePacked("Wrapped ", name));
+        string memory _symbol = string(abi.encodePacked("cc", symbol));
         address wrappedToken = Clones.cloneDeterministic(
             tokenImplementation,
             bytes32(uint256(uint160(token)))
