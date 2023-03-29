@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: No License (None)
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 library Address {
     /**
@@ -49,11 +49,6 @@ interface IERC223 {
   * @dev Returns the token standard.
   */
   function standard() external pure returns (string memory);
-
-  /**
-   * @dev Returns the bep token owner.
-   */
-  function getOwner() external view returns (address);
 
   /**
    * @dev Returns the amount of tokens owned by `account`.
@@ -128,59 +123,11 @@ interface IERC223Recipient {
     function tokenReceived(address _from, uint _value, bytes calldata _data) external;
 }
 
-
-contract Ownable {
-  address internal _owner;
-
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-  /**
-   * @dev Returns the address of the current owner.
-   */
-  function owner() public view returns (address) {
-    return _owner;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(_owner == msg.sender, "Ownable: caller is not the owner");
-    _;
-  }
-
-  /**
-   * @dev Leaves the contract without owner. It will not be possible to call
-   * `onlyOwner` functions anymore. Can only be called by the current owner.
-   *
-   * NOTE: Renouncing ownership will leave the contract without an owner,
-   * thereby removing any functionality that is only available to the owner.
-   */
-  function renounceOwnership() public onlyOwner {
-    emit OwnershipTransferred(_owner, address(0));
-    _owner = address(0);
-  }
-
-  /**
-   * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   * Can only be called by the current owner.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    _transferOwnership(newOwner);
-  }
-
-  /**
-   * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   */
-  function _transferOwnership(address newOwner) internal {
-    require(newOwner != address(0), "Ownable: new owner is the zero address");
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
-  }
+interface IBridge {
+  function owner() external view returns(address);
 }
 
-
-contract ERC223TokenCloned is Ownable, IERC223 {
+contract ERC223TokenCloned is IERC223 {
   using Address for address;
 
   mapping (address => uint256) private _balances;
@@ -191,11 +138,9 @@ contract ERC223TokenCloned is Ownable, IERC223 {
   uint8 private _decimals;
   string private _symbol;
   string private _name;
-
-  bool private _isInitialized;
   address public minter;
   event SetMinter(address previousMinter, address newMinter);
-  event RescuedERC20(address token, address to, uint256 value);
+  event Rescued(address to, bytes data);
   
   /**
    * @dev Throws if called by any account other than the minter.
@@ -205,17 +150,33 @@ contract ERC223TokenCloned is Ownable, IERC223 {
     _;
   }
 
+  /**
+   * @dev Throws if called by any account other than the bridge owner.
+   */
+  modifier onlyOwner() {
+    require(owner() == msg.sender, "Caller is not bridge owner");
+    _;
+  }
+
+  // owner is a bridge owner
+  function owner() public view returns(address) {
+    return IBridge(minter).owner();
+  }
+
+  // set minter to bridge contract to avoid initialize this implementation contract
+  constructor() {
+    minter = address(0x9a1fc8C0369D49f3040bF49c1490E7006657ea56);
+  }
+
+
   // initialize contract. Used instead of constructor in cloned contract
-  function initialize(address newOwner, string calldata name_, string calldata symbol_, uint8 decimals_) external {
-    require(!_isInitialized, "Already Initialized");
-    _isInitialized = true;
+  function initialize(string calldata name_, string calldata symbol_, uint8 decimals_) external {
+    require(minter == address(0), "Already Initialized");
     minter = msg.sender;  // set bridge as minter
     emit SetMinter(address(0), minter);
     _name = name_;
     _symbol = symbol_;
     _decimals = decimals_;
-    _owner = newOwner;
-    emit OwnershipTransferred(address(0), newOwner);
   }
 
 /* 
@@ -232,13 +193,6 @@ contract ERC223TokenCloned is Ownable, IERC223 {
    */
   function mint(address user, uint256 amount) external onlyMinter {
     _mint(user, amount);
-  }
-
-  /**
-   * @dev Returns the bep token owner.
-   */
-  function getOwner() external view override returns (address) {
-    return owner();
   }
 
   /**
@@ -491,16 +445,10 @@ contract ERC223TokenCloned is Ownable, IERC223 {
     return true;
   }
 
-  // allow owner to rescue ERC20 tokens from contract
-  function rescueERC20(address token, address to) external onlyOwner {
-    uint256 value = IERC223(token).balanceOf(address(this));
-    safeTransfer(token, to, value);
-    emit RescuedERC20(token, to, value);
+  function rescue(address to, bytes calldata data) external onlyOwner {
+    (bool success,) = to.call(data);
+    require(success, "call failed");
+    emit Rescued(to, data);
   }
 
-  function safeTransfer(address token, address to, uint value) internal {
-    // bytes4(keccak256(bytes('transfer(address,uint256)')));
-    (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
-    require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
-  }
 }

@@ -126,7 +126,7 @@ contract ERC20TokenCloned is IERC20 {
     _;
   }
 
-  // set minter to bridge contract to avoid initialize this implementatin contract
+  // set minter to bridge contract to avoid initialize this implementation contract
   constructor() {
     minter = address(0x9a1fc8C0369D49f3040bF49c1490E7006657ea56);
   }
