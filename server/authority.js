@@ -74,7 +74,7 @@ const bridgeNFTContracts = {
 const bridgeContracts = {
     "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
     "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
-    "97" : "0x3777c0b1CBFC65743149D5559db0bC199B7C647c",  // BSC test net
+    "97" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC test net
     "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
     "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
     "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
@@ -92,7 +92,7 @@ const providers = {
     "97" : "https://data-seed-prebsc-1-s2.binance.org:8545/",  // BSC test net
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
     "1" : "https://nodes.mewapi.io/rpc/eth",   // ETH main net
-    "61" : "https://www.ethercluster.com/etc", // ETC main net
+    "61" : "https://etc.etcdesktop.com", // ETC main net
     "199": "https://rpc.bt.io/",  // BTTC main net
     "250" : "https://rpcapi.fantom.network/", // Fantom Opera mainnet
     "137" : "https://polygon-rpc.com/", // Polygon Mainnet

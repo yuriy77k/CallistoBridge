@@ -49,7 +49,7 @@ const providers = {
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
     //"56" : "https://bsc-dataseed1.defibit.io/",  // BSC main net
     "1" : "https://nodes.mewapi.io/rpc/eth",   // ETH main net
-    "61" : "https://www.ethercluster.com/etc", // ETC main net
+    "61" : "https://etc.etcdesktop.com", // ETC main net
     "199": "https://rpc.bt.io/",  // BTTC main net
     "250" : "https://rpcapi.fantom.network/", // Fantom Opera mainnet
     "137" : "https://polygon-rpc.com/", // Polygon Mainnet
