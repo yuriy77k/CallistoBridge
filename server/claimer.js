@@ -51,14 +51,14 @@ const providers = {
 }
 
 const minimalBalance = {
-  "20729" : 1e17, // CLO test net
-  "820" : 1e17, // CLO main net
+  "20729" : 1e18, // CLO test net
+  "820" : 1e18, // CLO main net
   "97" : 1e17,  // BSC test net
   "56" : 0,  // BSC main net
   "42" : 1e17,  // ETH KOVAN test net 
   "1"  : 0,   // ETH main net
-  "61" : 3*1e14,  // ETC main net
-  "199": 150*1e18,  // BTTC main net    
+  "61" : 0,  // ETC main net
+  "199": 0,  // BTTC main net    
 }
 
 async function fetch(url) {
