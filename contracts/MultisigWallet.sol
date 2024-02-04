@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: No License (None)
-pragma solidity ^0.8.0;
+pragma solidity 0.8.19;
 
 /**
  * @dev Library for managing
@@ -273,11 +273,11 @@ contract MultisigWallet {
     }
 
     // allow receive ERC223 tokens
-    function tokenReceived(address _from, uint _value, bytes calldata _data) external pure returns(bytes4) {
-      return this.tokenReceived.selector;
+    function tokenReceived(address, uint, bytes calldata) external pure returns(bytes4) {
+        return this.tokenReceived.selector;
     } 
     // allow receive ERC721 tokens (NFT)
-    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external pure returns(bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns(bytes4) {
         return this.onERC721Received.selector;
     }
     // allow receive coin

@@ -91,7 +91,7 @@ async function requestSignature(txID, txChain)
 {
   var p = 'tx='+txID+'&chain='+txChain;
   var r1 = fetch('https://nrc6gwlqvajn4umvmcqurtni240usuqm.lambda-url.us-east-2.on.aws/auth?'+p);
-  var r2 = fetch('https://ip-159-225.cust.aspone.cz/auth?'+p);
+  var r2 = fetch('https://bridge01.callisto.network/auth?'+p);
   var r3 = fetch('https://srs27mbzuopehskfhvkdrdjwqi0qpjxk.lambda-url.us-west-2.on.aws/auth?'+p);
   
   return  [
