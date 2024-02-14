@@ -120,13 +120,13 @@ async function claim(txID, txChain)
         const acc = web3.eth.accounts.privateKeyToAccount(claimer_pk);
         web3.eth.accounts.wallet.add(acc);
         const bridge = new web3.eth.Contract(bridge_abi, bridgeContracts[sig[0].chainId]);
-
+/*
         // check receiver balance
         var bal = await web3.eth.getBalance(sig[0].to);
         if (parseInt(bal) > min) {
             return {isSuccess: false, message: "Receiver balance: "+ (bal/1e18) +" is higher then required: " + (min/1e18) };
         }
-
+*/
         if ("toContract" in sig[0]) {
             //console.log("toContract");
             var gas_limit = await bridge.methods.claimToContract(sig[0].token, txID, sig[0].to, sig[0].value, txChain, sig[0].toContract, sig[0].data, signatures).estimateGas({from: acc.address});
