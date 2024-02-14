@@ -130,13 +130,13 @@ async function claim(txID, txChain)
         if ("toContract" in sig[0]) {
             //console.log("toContract");
             var gas_limit = await bridge.methods.claimToContract(sig[0].token, txID, sig[0].to, sig[0].value, txChain, sig[0].toContract, sig[0].data, signatures).estimateGas({from: acc.address});
-            var params = {from: acc.address, value: 0, gas: parseInt(gas_limit)+20000, chainId: sig[0].chainId,};
+            var params = {from: acc.address, value: 0, gas: parseInt(gas_limit)+20000};
             var tx = await bridge.methods.claimToContract(sig[0].token, txID, sig[0].to, sig[0].value, txChain, sig[0].toContract, sig[0].data, signatures).send(params);
             return {isSuccess: true, txHash: tx.transactionHash, chainID: sig[0].chainId};
         } else {
             //console.log("claim");
             var gas_limit = await bridge.methods.claim(sig[0].token, txID, sig[0].to, sig[0].value, txChain, signatures).estimateGas({from: acc.address});
-            var params = {from: acc.address, value: 0, gas: parseInt(gas_limit)+20000, chainId: sig[0].chainId,};
+            var params = {from: acc.address, value: 0, gas: parseInt(gas_limit)+20000};
             var tx = await bridge.methods.claim(sig[0].token, txID, sig[0].to, sig[0].value, txChain, signatures).send(params);
             return {isSuccess: true, txHash: tx.transactionHash, chainID: sig[0].chainId};
 
