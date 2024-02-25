@@ -301,11 +301,16 @@ contract CallistoBridge is Ownable {
         uint64  validFrom;
     }
 
+    struct Fees {
+        uint256 inbound;    // inbound transaction fee with 2 decimals
+        uint256 outbound;   // outbound transaction fee with 2 decimals
+    }
+
     uint256 public threshold;   // minimum number of signatures required to approve swap
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
     bool public frozen; // if frozen - swap will not work
-    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC.... 
+    uint256 public wrapNonce;   // UNUSED
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
     mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
@@ -319,6 +324,7 @@ contract CallistoBridge is Ownable {
     bool public migrationSetupForbidden;    // forbid adding migration tokens
     address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
     uint256 public functionMapping;    // bitmap of locked functions (one bit per function)
+    Fees public fees;   // bridge fees
 
     event SetAuthority(address authority, bool isEnable);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
@@ -326,7 +332,7 @@ contract CallistoBridge is Ownable {
     event SetContractCaller(address newContractCaller);
     event Deposit(address indexed token, address indexed sender, uint256 value, uint256 toChainId, address toToken);
     event Claim(address indexed token, address indexed to, uint256 value, bytes32 txId, uint256 fromChainId, address fromToken);
-    event Fee(address indexed sender, uint256 fee);
+    event Fee(address indexed sender, address token, uint256 fee);
     event CreatePair(address toToken, bool isWrapped, address fromToken, uint256 fromChainId);
     event Frozen(bool status);
     event RescuedERC20(address token, address to, uint256 value);
@@ -486,8 +492,8 @@ contract CallistoBridge is Ownable {
     }
 
     // returns `nonce` to use in `createWrappedToken()` to create address starting with 0xCC.....
-    function calculateNonce() external view returns(uint256 nonce, address addr) {
-        nonce = wrapNonce;
+    function calculateNonce(uint256 startNonce) external view returns(uint256 nonce, address addr) {
+        nonce = startNonce;
         address implementation = tokenImplementation;
         while (true) {
             nonce++;
@@ -518,8 +524,6 @@ contract CallistoBridge is Ownable {
     {
         require(fromToken != address(0), "Wrong token address");
         require(tokenForeign[fromChainId][fromToken] == address(0), "This token already wrapped");
-        require(nonce > wrapNonce, "Nonce must be higher then wrapNonce");
-        wrapNonce = nonce;
         address wrappedToken = Clones.cloneDeterministic(tokenImplementation, bytes32(nonce));
         IERC223TokenCloned(wrappedToken).initialize(owner(), name, symbol, decimals);
         tokenPair[fromChainId][wrappedToken] = Token(fromToken, true);
@@ -628,6 +632,21 @@ contract CallistoBridge is Ownable {
 
         if (msg.value != 0) to.safeTransferETH(msg.value);  // send CLO to user as bonus
 
+        // take fee
+        uint256 fee = value * fees.inbound / 10000;
+        if (fee != 0) {
+            value -= fee;
+            if (token <= MAX_NATIVE_COINS)
+                feeTo.safeTransferETH(fee);
+            else {
+            if(pair.isWrapped)
+                IERC223TokenCloned(token).mint(feeTo, fee);
+            else
+                token.safeTransfer(feeTo, fee);
+            }
+            emit Fee(to, token, fee);
+        }
+     
         // Call toContract
         if(isContract(toContract) && toContract != address(this)) {
             if (token <= MAX_NATIVE_COINS) {
@@ -636,7 +655,7 @@ contract CallistoBridge is Ownable {
                 if(pair.isWrapped) {
                     IERC223TokenCloned(token).mint(contractCaller, value);
                 } else {
-                    tokenDeposits[token] -= value;
+                    tokenDeposits[token] -= (value + fee);
                     token.safeTransfer(contractCaller, value);
                 }
                 IContractCaller(contractCaller).callContract(to, token, value, toContract, data);               
@@ -648,7 +667,7 @@ contract CallistoBridge is Ownable {
                 if(pair.isWrapped) {
                     IERC223TokenCloned(token).mint(to, value);
                 } else {
-                    tokenDeposits[token] -= value;
+                    tokenDeposits[token] -= (value + fee);
                     token.safeTransfer(to, value);
                 }
             }
@@ -719,6 +738,15 @@ contract CallistoBridge is Ownable {
         address token = msg.sender;
         Token memory pair = tokenPair[toChainId][token];
         require(pair.token != address(0), "There is no pair");
+
+        // take fee
+        uint256 fee = _value * fees.outbound / 10000;
+        if(fee != 0) {
+            _value -= fee;
+            token.safeTransfer(feeTo, fee);
+            emit Fee(_from, token, fee);            
+        }
+
         if(pair.isWrapped) {
             IERC223TokenCloned(token).burn(_value);
         } else {
@@ -763,11 +791,14 @@ contract CallistoBridge is Ownable {
         Token memory pair = tokenPair[toChainId][token];
         require(pair.token != address(0), "There is no pair");
         pair_token = pair.token;
-        uint256 fee = msg.value;
+        uint256 fee;
         if (token <= MAX_NATIVE_COINS) {
             require(value <= msg.value, "Wrong value");
-            fee -= value;
+            value = value * (10000 - fees.outbound) / 10000;
+            fee = msg.value - value;
         } else {
+            fee = value * fees.outbound / 10000;
+            value -= fee;
             if(pair.isWrapped) {
                 IERC223TokenCloned(token).burnFrom(msg.sender, value);
             } else {
@@ -776,8 +807,11 @@ contract CallistoBridge is Ownable {
             }
         }
         if (fee != 0) {
-            feeTo.safeTransferETH(fee);
-            emit Fee(msg.sender, fee);
+            if (token <= MAX_NATIVE_COINS) 
+                feeTo.safeTransferETH(fee);
+            else
+                token.safeTransferFrom(msg.sender, feeTo, fee);
+            emit Fee(msg.sender, token, fee);
         }
     }
 
@@ -823,13 +857,28 @@ contract CallistoBridge is Ownable {
             value = value * 10**12;
         }
 
+        // take fee
+        uint256 fee = value * fees.inbound / 10000;
+        if (fee != 0) {
+            value -= fee;
+            if (token <= MAX_NATIVE_COINS)
+                feeTo.safeTransferETH(fee);
+            else {
+            if(pair.isWrapped)
+                IERC223TokenCloned(token).mint(feeTo, fee);
+            else
+                token.safeTransfer(feeTo, fee);
+            }
+            emit Fee(to, token, fee);
+        }
+
         if (token <= MAX_NATIVE_COINS) {
             to.safeTransferETH(value);
         } else {
             if(pair.isWrapped) {
                 IERC223TokenCloned(token).mint(to, value);
             } else {
-                tokenDeposits[token] -= value;
+                tokenDeposits[token] -= (value + fee);
                 token.safeTransfer(to, value);
             }
         }

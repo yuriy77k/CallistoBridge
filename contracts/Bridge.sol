@@ -305,7 +305,7 @@ contract CallistoBridge is Ownable {
     address public tokenImplementation;    // implementation of wrapped token
     address public feeTo; // send fee to this address
     bool public frozen; // if frozen - swap will not work
-    uint256 public wrapNonce;   // the last nonce used to create wrapped token address begin with 0xCC....  (IS NOT USED)
+    uint256 public wrapNonce;   // UNUSED
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
     mapping(uint256 => mapping(address => Token)) public tokenPair;       // chainID => native token address => Token struct
     mapping(uint256 => mapping(address => address)) public tokenForeign;  // chainID => foreign token address => native token
