@@ -468,6 +468,11 @@ contract CallistoBridge is Ownable {
         emit SetFeeTo(previousFeeTo, newFeeTo);
     }
 
+    // set fee receiver address
+    function setFees(Fees memory _fees) external onlyOwner onlySetup {
+        fees = _fees;
+    }
+
     // set threshold - minimum number of signatures required to approve swap
     function setThreshold(uint256 _threshold) external onlyOwner onlySetup {
         require(_threshold != 0 && _threshold <= authorities.length(), "Wrong threshold");
