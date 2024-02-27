@@ -257,6 +257,31 @@ To get transaction events the script use [public RPC](https://github.com/yuriy77
 
 Therefore, I highly recommend to use local node instead of public RPC or, at least, use different public RPC for different authority script.
 
+# Bridge deployed
+
+Bridge contract address on all chains `0x9a1fc8C0369D49f3040bF49c1490E7006657ea56`
+- [CLO bridge](https://explorer.callisto.network/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56/write-proxy)
+- [BSC bridge](https://bscscan.com/address/0x9a1fc8c0369d49f3040bf49c1490e7006657ea56#writeProxyContract) (toToken - native token)
+- [ETH bridge](https://etherscan.io/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#writeProxyContract) (toToken - native token)
+- [ETC bridge](https://blockscout.com/etc/mainnet/address/0x9a1fc8C0369D49f3040bF49c1490E7006657ea56#writeProxyContract) (toToken - native token)
+- [BTTC bridge](https://bttcscan.com/address/0x9a1fc8c0369d49f3040bf49c1490e7006657ea56) (toToken - native token)
+- [Polygon bridge](https://polygonscan.com/address/0x9a1fc8c0369d49f3040bf49c1490e7006657ea56#writeProxyContract)
+
+### Multisig
+- Owners Multisig [0x6A56D0f7498C9f2AEb9Bb6892Ade5b2E0A50379F](https://explorer.callisto.network/address/0x6A56D0f7498C9f2AEb9Bb6892Ade5b2E0A50379F/contracts)
+- Founders Multisig [0x447c143620A4555c8aEb1596fb013ea84e7DbC03](https://explorer.callisto.network/address/0x447c143620A4555c8aEb1596fb013ea84e7DbC03/contracts)
+
+### Claimer
+
+- https://bridge01.callisto.network/claim?tx=0x2dc54873cd96d25ccc000f90e71bc0239b1c7437e54ab90ed2b73c8e2e589260&chain=820
+- [0x91a93225332fa3e0e888d6dce9ea26ed3fc59bc8](https://explorer.callisto.network/address/0x91A93225332fa3e0e888D6dCE9ea26Ed3Fc59bc8/transactions)
+
+### Authority
+
+- https://srs27mbzuopehskfhvkdrdjwqi0qpjxk.lambda-url.us-west-2.on.aws/auth?tx=0x8dd267b036cdb3d3cabdf344f6ac599c0d9f4ed513024aac83c0a663673bed29&chain=56
+- https://bridge01.callisto.network/auth?tx=0x8dd267b036cdb3d3cabdf344f6ac599c0d9f4ed513024aac83c0a663673bed29&chain=56
+- https://nrc6gwlqvajn4umvmcqurtni240usuqm.lambda-url.us-east-2.on.aws/auth?tx=0x8dd267b036cdb3d3cabdf344f6ac599c0d9f4ed513024aac83c0a663673bed29&chain=56
+
 ## CLO test net
 [Bridge](https://testnet-explorer.callisto.network/address/0xE1AF7a91EBC36E66D89a6201680dC5242796b246/contracts) `0xE1AF7a91EBC36E66D89a6201680dC5242796b246`
 
