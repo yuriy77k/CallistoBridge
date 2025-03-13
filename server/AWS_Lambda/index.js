@@ -42,6 +42,7 @@ const bridgeContracts = {
 
 const providers = {
     //"20729" : "https://testnet-rpc.callisto.network", // CLO test net
+    "121224": "https://rpc.fushuma.com/", // Fushuma
     "820" : "https://rpc.callistodao.org/", // CLO main net
     "97" : "https://data-seed-prebsc-1-s1.binance.org:8545/",  // BSC test net
     "56" : "https://bsc-dataseed.binance.org/",  // BSC main net

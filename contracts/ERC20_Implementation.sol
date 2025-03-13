@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: No License (None)
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 interface IERC20 {
   /**
@@ -21,11 +21,6 @@ interface IERC20 {
   * @dev Returns the token name.
   */
   function name() external view returns (string memory);
-
-  /**
-   * @dev Returns the bep token owner.
-   */
-  function getOwner() external view returns (address);
 
   /**
    * @dev Returns the amount of tokens owned by `account`.
@@ -160,13 +155,6 @@ contract ERC20TokenCloned is IERC20 {
    */
   function mint(address user, uint256 amount) external onlyMinter {
     _mint(user, amount);
-  }
-
-  /**
-   * @dev Returns the bep token owner.
-   */
-  function getOwner() external override view returns (address) {
-    return owner();
   }
 
   /**

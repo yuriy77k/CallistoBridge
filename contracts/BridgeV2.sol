@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-interface IERC223TokenCloned {
-    // initialize cloned token just for ERC223TokenCloned
+interface IERC20TokenCloned {
+    // initialize cloned token just for ERC20TokenCloned
     function initialize(
         string calldata name,
         string calldata symbol,
@@ -13,10 +13,7 @@ interface IERC223TokenCloned {
     function burnFrom(address account, uint256 amount) external returns (bool);
     function burn(uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
-    function allowance(address _owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(address _owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
     function decimals() external view returns (uint8);
     function symbol() external view returns (string memory);
@@ -330,7 +327,7 @@ interface IBridge {
 
 contract ContractCaller {
     using TransferHelper for address;
-    address constant MAX_NATIVE_COINS = address(31); // addresses from address(1) to MAX_NATIVE_COINS are considered as native coins 
+    address constant NATIVE_COINS = address(1); // address is considered as native coins 
     address public bridge;
 
     event RescuedTokens(address token, address to, uint256 balance);
@@ -359,14 +356,14 @@ contract ContractCaller {
             balance = address(this).balance;
             to.safeTransferETH(balance);
         } else {
-            balance = IERC223TokenCloned(token).balanceOf(address(this));
+            balance = IERC20TokenCloned(token).balanceOf(address(this));
             token.safeTransfer(to, balance);
         }
         emit RescuedTokens(token, to, balance);
     }
 
     function callContract(address user, address token, uint256 value, address toContract, bytes memory data) external payable onlyBridge {
-        if (token <= MAX_NATIVE_COINS) {
+        if (token == NATIVE_COINS) {
             value = msg.value;
             uint balanceBefore = address(this).balance - value; // balance before
             (bool success,) = toContract.call{value: value}(data);
@@ -375,7 +372,7 @@ contract ContractCaller {
         } else {
             token.safeApprove(toContract, value);
             (bool success,) = toContract.call{value: 0}(data);
-            if (success) value = IERC223TokenCloned(token).allowance(address(this), toContract); // unused amount (the rest) = allowance
+            if (success) value = IERC20TokenCloned(token).allowance(address(this), toContract); // unused amount (the rest) = allowance
             if (value != 0) {   // if not all value used reset approvement
                 token.safeApprove(toContract, 0);
                 token.safeTransfer(user, value);   // send to user rest of tokens
@@ -384,19 +381,18 @@ contract ContractCaller {
     }
 }
 
-contract CallistoBridge is Ownable {
+contract BridgeV2 is Ownable {
     using TransferHelper for address;
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet authorities; // authority has to sign claim transaction (message)
+    EnumerableSet.AddressSet tokenList; // list of added tokens in the bridge on this chain
+    address constant NATIVE_COINS = address(1); // address is considered as native coins
 
-    address constant MAX_NATIVE_COINS = address(31); // addresses from address(1) to MAX_NATIVE_COINS are considered as native coins
-    // CLO = address(1)
     struct Token {
         address token; // origin token address
         uint256 chainID; // origin token chainID
         address wrappedToken; // address of wrapped token on this chain (address(0) if no wrapped token)
-        address authority; // authority address that MUST approve token transfer
-        uint256 addTokenBlock; // bock number where origin token was added
+        address authority; // authority address that MUST approve token transfer. address(0) - not set. It may not be in the authorities list
     }
 
     struct Upgrade {
@@ -404,43 +400,38 @@ contract CallistoBridge is Ownable {
         uint64 validFrom;
     }
 
+    // Token details for frontend returns by getTokenList function
+    struct TokenDetails {
+        address token;
+        uint8 decimals;
+        string name;
+        string symbol;
+    }
+
     uint256 public threshold; // minimum number of signatures required to approve swap
     address public tokenImplementation; // implementation of wrapped token
     address public feeTo; // send fee to this address
     bool public frozen; // if frozen - swap will not work
-    uint256 public wrapNonce;   // IS NOT USED (placeholder for storage compatibility)
     mapping(uint256 => mapping(bytes32 => bool)) public isTxProcessed;    // chainID => txID => isProcessed
-    mapping(uint256 => mapping(address => Token)) public tokenPair;       // IS NOT USED (placeholder for storage compatibility)
-    mapping(uint256 => mapping(address => address)) public tokenForeign;  // IS NOT USED (placeholder for storage compatibility)
     mapping(address => uint256) public tokenDeposits; // amount of tokens were deposited by users
     mapping(address => bool) public isFreezer; // addresses that have right to freeze contract
     uint256 public setupMode; // time when setup mode will start, 0 if disable
-    Upgrade public upgradeData;
-    address public founders;
-    address public requiredAuthority; // IS NOT USED (placeholder for storage compatibility)
-    // Begin for non Callisto chain
+    Upgrade public upgradeData; // data for upgrade to new contract
+    address public founders;    // founders multisig wallet. It has right to change owner
     address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
-    uint256 public functionMapping;    // IS NOT USED (placeholder for storage compatibility)
-    // End for non Callisto chain
-    mapping(address => address) public migration;   // migration oldToken => newToken
-    bool public migrationSetupForbidden;    // forbid adding migration tokens
-    /*// Begin for Callisto chain
-    address public contractCaller; // intermediate contract that calls third-party contract functions (toContract)
-    uint256 public functionMapping;    // IS NOT USED (placeholder for storage compatibility)
-    */// End for Callisto chain
     
-    address public system; // address of system wallet with right to transfer ownership of token
     mapping(bytes32 => Token) internal addedTokens; // native (wrapped) token address => Token struct
     mapping(address => bytes32) internal nativeToToken; // mapping from native token to key hash for Token structure
     mapping(uint256 => bool) public isSupported; // chainID => isSupported
     mapping(address => bool) public requiredAuthorities; // authority address that MUST sign swap transaction (trusted authorities)
     uint256 public minRequiredAuthorities; // minimum number of trusted authorities required to sign transaction
-    uint256 public swapFee; // fee percent with 4 decimals (i.e. 1.5% = 15000) that will subtracted from swapping tokens.
+    mapping(address nativeToken => uint256) internal bridgeFee; // fee in percent with 4 decimals (i.e. 1.5% = 15000) for specific token. 0 - no fee. bridgeFee[address(0)] - global fee
 
     event SetAuthority(address authority, bool isEnable);
     event SetRequiredAuthority(address authority, bool isEnable);
     event SetTokenAuthority(address indexed token, uint256 chainId, address authority);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
+    event SetBridgeFee(address token, uint256 fee); // fee in percent with 4 decimals (i.e. 1.5% = 15000). 0 - no fee. bridgeFee[address(0)] - global fee
     event SetThreshold(uint256 threshold);
     event SetContractCaller(address newContractCaller);
     event Deposit(
@@ -460,7 +451,7 @@ contract CallistoBridge is Ownable {
         bytes32 txId,
         uint256 fromChainId
     );
-    event Fee(address indexed sender, uint256 fee);
+    event Fee(address sender, address token, uint256 fee); // fee amount in token paid by user.
     event CreatePair(address toToken, address fromToken, uint256 fromChainId);
     event Frozen(bool status);
     event RescuedERC20(address token, address to, uint256 value);
@@ -495,13 +486,12 @@ contract CallistoBridge is Ownable {
         string symbol
     );
     event SetSupportedChain(uint256 chainID, bool isSupported);
-    event AddTokenMigration(address tokenFrom, address tokenTo);
 
     // run only once from proxy
     function initialize(
         address newOwner,   // bridge owner (company wallet)
         address newFounders,
-        address _system,    // system wallet has right to set master authority for specific wrapped token 
+        address _feeTo,    // wallet which receive fees from bridge
         address _tokenImplementation,   // token implementation contract
         //address _contractCaller,        // intermediate contract caller
         uint256 _threshold,             // minimum authorities required to approve bridge transaction
@@ -512,12 +502,11 @@ contract CallistoBridge is Ownable {
             newOwner != address(0) &&
             newFounders != address(0) &&
             _owner == address(0) &&
-            _system != address(0)
+            _feeTo != address(0)
         ); // run only once
         _owner = newOwner;
         founders = newFounders;
         emit OwnershipTransferred(address(0), newOwner);
-        system = _system;
         require(
             _tokenImplementation != address(0),
             "Wrong tokenImplementation"
@@ -539,8 +528,8 @@ contract CallistoBridge is Ownable {
         //contractCaller = _contractCaller;
         contractCaller = address(new ContractCaller());
         //emit SetContractCaller(_contractCaller);
-        feeTo = _system;
-        emit SetFeeTo(address(0), _system);
+        feeTo = _feeTo;
+        emit SetFeeTo(address(0), _feeTo);
         threshold = _threshold;
         emit SetThreshold(_threshold);
         requiredAuthorities[_authorities[0]] = true;
@@ -551,7 +540,6 @@ contract CallistoBridge is Ownable {
         bytes32 key = keccak256(abi.encodePacked(address(1), block.chainid));
         addedTokens[key].token = address(1);
         addedTokens[key].chainID = block.chainid;
-        addedTokens[key].addTokenBlock = block.number;
         nativeToToken[address(1)] = key;
         emit AddToken(address(1), block.chainid, 18, _nativeCoin, _nativeCoin);
     }
@@ -571,15 +559,6 @@ contract CallistoBridge is Ownable {
         _;
     }
 
-    // allowed only owner or system
-    modifier onlySystem() {
-        require(
-            owner() == msg.sender || system == msg.sender,
-            "caller is not the owner or system"
-        );
-        _;
-    }
-
     function upgradeTo() external view returns (address newContract) {
         Upgrade memory upg = upgradeData;
         require(
@@ -591,7 +570,7 @@ contract CallistoBridge is Ownable {
 
     function requestUpgrade(address newContract) external onlyOwner {
         require(newContract != address(0), "Zero address");
-        uint256 validFrom = block.timestamp; // + 3 days; // remove dalay for testing
+        uint256 validFrom = block.timestamp;// + 3 days; // remove delay for testing
         upgradeData = Upgrade(newContract, uint64(validFrom));
         emit UpgradeRequest(newContract, validFrom);
     }
@@ -607,7 +586,7 @@ contract CallistoBridge is Ownable {
         _owner = newOwner;
     }
 
-    function ChangeFounder(address newFounders) public {
+    function changeFounder(address newFounders) public {
         require(founders == msg.sender, "caller is not the founders");
         require(newFounders != address(0), "new owner is the zero address");
         emit OwnershipTransferred(founders, newFounders);
@@ -641,7 +620,7 @@ contract CallistoBridge is Ownable {
         emit Frozen(false);
     }
 
-    // add authority
+    // add address to freezer list (who can freeze bridge)
     function setFreezer(address freezer, bool isActive) external onlyOwner {
         require(freezer != address(0), "Zero address");
         isFreezer[freezer] = isActive;
@@ -656,20 +635,6 @@ contract CallistoBridge is Ownable {
             require(authorities.add(_authorities[i]), "Authority already added");
             emit SetAuthority(_authorities[i], true);
         }
-    }
-
-    // add authority
-    function addAuthority(address authority) external onlyOwner onlySetup {
-        require(authority != address(0), "Zero address");
-        require(authorities.length() < 255, "Too many authorities");
-        require(authorities.add(authority), "Authority already added");
-        emit SetAuthority(authority, true);
-    }
-
-    // remove authority
-    function removeAuthority(address authority) external onlyOwner {
-        require(authorities.remove(authority), "Authority does not exist");
-        emit SetAuthority(authority, false);
     }
 
     // remove authorities
@@ -692,10 +657,18 @@ contract CallistoBridge is Ownable {
         }
     }
 
-    // fee percent with 4 decimals (i.e. 1.5% = 15000) that will subtracted from swapping tokens.
-    function setSwapFee(uint256 fee) external onlyOwner onlySetup {
-        require(fee <= 100000, "Too high fee"); // not greater than 10%
-        swapFee = fee;
+    // get fee for specific token, if fee is not set, return global fee
+    function getBridgeFee(address token) public view returns (uint256 fee) {
+        fee = bridgeFee[token];
+        if (fee == 0) fee = bridgeFee[address(0)];  // return global fee
+        else if (fee == 100000) fee = 0; // if fee == 100000, it means 0 fee for specific token
+    }
+
+    // fee percent with 4 decimals (i.e. 1.5% = 15000) that will subtracted from deposited tokens. 0 - no fee. bridgeFee[address(0)] - global fee
+    function setBridgeFee(address token, uint256 fee) external onlyOwner onlySetup {
+        require(fee <= 100000, "Too high fee"); // fee must be less than 10% (99999 max). If fee == 100000, it will set 0 fee for specific token
+        bridgeFee[token] = fee;
+        emit SetBridgeFee(token, fee);
     }
 
     // set fee receiver address
@@ -726,43 +699,17 @@ contract CallistoBridge is Ownable {
         contractCaller = newContractCaller;
         emit SetContractCaller(newContractCaller);
     }
-    // set new token implementation
-    function setTokenImplementation(address newImplementation) external onlyOwner onlySetup {
-        require(!migrationSetupForbidden);
-        tokenImplementation = newImplementation;
-    } 
-    // setup token migration
-    function setupTokenMigration(address tokenFrom, address tokenTo) external onlyOwner onlySetup {
-        require(!migrationSetupForbidden);
-        migration[tokenFrom] = tokenTo;
-        emit AddTokenMigration(tokenFrom, tokenTo);
-    }
 
-    // forbid setup token migration
-    function forbidMigrationSetup() external onlyOwner onlySetup {
-        migrationSetupForbidden = true;
-    }
-
-    // migrate from old ERC20 implementation to the new one
-    function migrate(address token, uint value) external {
-        address newToken = migration[token];
-        require(newToken != address(0), "No migration token");
-        IERC223TokenCloned(token).burnFrom(msg.sender, value);
-        IERC223TokenCloned(newToken).mint(msg.sender, value);
-    }
-
-    // set system address
-    function setSystem(address _system) external onlyOwner {
-        require(_system != address(0));
-        system = _system;
-    }
-
-    function setSupportedChain(uint256 _chainID, bool _isSupported)
+    // set supported chain
+    function setSupportedChain(uint256[] calldata _chainID, bool _isSupported)
         external
-        onlySystem
+        onlyOwner
+        onlySetup
     {
-        isSupported[_chainID] = _isSupported;
-        emit SetSupportedChain(_chainID, _isSupported);
+        for (uint256 i = 0; i < _chainID.length; i++){
+            isSupported[_chainID[i]] = _isSupported;
+            emit SetSupportedChain(_chainID[i], _isSupported);
+        }
     }
 
     function disableSetupMode() external onlyOwner {
@@ -776,7 +723,7 @@ contract CallistoBridge is Ownable {
     }
 
     function rescueERC20(address token, address to) external onlyOwner {
-        uint256 value = IERC223TokenCloned(token).balanceOf(address(this)) -
+        uint256 value = IERC20TokenCloned(token).balanceOf(address(this)) -
             tokenDeposits[token];
         token.safeTransfer(to, value);
         emit RescuedERC20(token, to, value);
@@ -804,18 +751,35 @@ contract CallistoBridge is Ownable {
         return addedTokens[key];
     }
 
+    // return list of added tokens
+    function getTokenList() external view returns (TokenDetails[] memory) {
+        uint len = tokenList.length();
+        TokenDetails[] memory tokens = new TokenDetails[](len);
+        for (uint i = 0; i < len; i++){
+            address token = tokenList.at(i);
+            //bytes32 key = nativeToToken[token];
+            tokens[i] = TokenDetails(
+                token,
+                IERC20TokenCloned(token).decimals(),
+                IERC20TokenCloned(token).name(),
+                IERC20TokenCloned(token).symbol()
+            );
+        }
+        return tokens;
+    }
+
     // add new token to the bridge
     function addToken(address token) external {
         require(uint256(nativeToToken[token]) == 0, "Token already added");
-        string memory name = IERC223TokenCloned(token).name();
-        string memory symbol = IERC223TokenCloned(token).symbol();
-        uint256 decimals = IERC223TokenCloned(token).decimals();
+        string memory name = IERC20TokenCloned(token).name();
+        string memory symbol = IERC20TokenCloned(token).symbol();
+        uint256 decimals = IERC20TokenCloned(token).decimals();
         bytes32 key = keccak256(abi.encodePacked(token, block.chainid));
         addedTokens[key].token = token;
         addedTokens[key].chainID = block.chainid;
         addedTokens[key].wrappedToken = address(0);
-        addedTokens[key].addTokenBlock = block.number;
         nativeToToken[token] = key;
+        tokenList.add(token);
         emit AddToken(token, block.chainid, decimals, name, symbol);
     }
 
@@ -836,12 +800,12 @@ contract CallistoBridge is Ownable {
         );
         checkSignatures(address(0), messageHash, sig);
         string memory _name = string(abi.encodePacked("Wrapped ", name));
-        string memory _symbol = string(abi.encodePacked("cc", symbol));
+        string memory _symbol = string(abi.encodePacked("W", symbol));
         address wrappedToken = Clones.cloneDeterministic(
             tokenImplementation,
             bytes32(uint256(uint160(token)))
         );
-        IERC223TokenCloned(wrappedToken).initialize(
+        IERC20TokenCloned(wrappedToken).initialize(
             _name,
             _symbol,
             uint8(decimals)
@@ -850,6 +814,7 @@ contract CallistoBridge is Ownable {
         addedTokens[key].chainID = chainID;
         addedTokens[key].wrappedToken = wrappedToken;
         nativeToToken[wrappedToken] = key;
+        tokenList.add(wrappedToken);
         emit CreatePair(wrappedToken, token, chainID); //wrappedToken - wrapped token contract address
     }
 
@@ -857,27 +822,14 @@ contract CallistoBridge is Ownable {
     function setTokenMustAuthority(
         address token, // original token address
         uint256 chainID, // original token chain ID
-        address authority // address of MUST authority for this token
-    ) external onlySystem {
+        address authority // address of MUST authority for this token, address(0) if don't need specific authority
+    ) external onlyOwner {
         bytes32 key = keccak256(abi.encodePacked(token, chainID));
         require(addedTokens[key].token != address(0), "token not exist");
         require(addedTokens[key].authority != address(0), "change authority not allowed");
         require(authority != address(0));
         addedTokens[key].authority = authority;
         emit SetTokenAuthority(token, chainID, authority);
-    }
-
-    // change MUST authority for specific token
-    function changeTokenMustAuthority(
-        address token, // original token address
-        uint256 chainID, // original token chain ID
-        address newAuthority // address of MUST authority for this token, address(0) if don't need specific authority
-    ) external {
-        bytes32 key = keccak256(abi.encodePacked(token, chainID));
-        require(addedTokens[key].token != address(0), "token not exist");
-        require(addedTokens[key].authority == msg.sender || owner() == msg.sender, "not allowed");
-        addedTokens[key].authority = newAuthority;
-        emit SetTokenAuthority(token, chainID, newAuthority);
     }
 
     // Move tokens through the bridge and call the contract with 'data' parameters on the destination chain
@@ -890,14 +842,7 @@ contract CallistoBridge is Ownable {
         bytes memory data // this data will be passed to contract call (ABI encoded parameters)
     ) external payable notFrozen {
         require(receiver != address(0), "Incorrect receiver address");
-        uint256 fee = swapFee; // fee in percent with 4 decimals
-        if (fee !=0 && value > 100) {
-            fee = value * fee / 1000000; // fee amount
-            value -= fee;
-            token.safeTransfer(feeTo, fee); // take fee
-        }
-
-        (address originalToken, uint256 originalChainID) = _deposit(
+        (address originalToken, uint256 originalChainID, uint256 valueWithoutFee) = _deposit(
             token,
             value,
             toChainId
@@ -907,7 +852,7 @@ contract CallistoBridge is Ownable {
             originalChainID,
             token,
             receiver,
-            value,
+            valueWithoutFee,
             toChainId,
             toContract,
             data
@@ -959,7 +904,7 @@ contract CallistoBridge is Ownable {
             address token = addedTokens[key].wrappedToken;
             // Call toContract
             if (isContract(toContract) && toContract != address(this)) {
-                if (token == address(0) && originalToken <= MAX_NATIVE_COINS) {
+                if (token == address(0) && originalToken == NATIVE_COINS) {
                     token = originalToken;
                     IContractCaller(contractCaller).callContract{value: value}(
                         to,
@@ -970,7 +915,7 @@ contract CallistoBridge is Ownable {
                     );
                 } else {
                     if (token != address(0)) {
-                        IERC223TokenCloned(token).mint(contractCaller, value);
+                        IERC20TokenCloned(token).mint(contractCaller, value);
                     } else {
                         token = originalToken;
                         tokenDeposits[token] -= value;
@@ -987,10 +932,10 @@ contract CallistoBridge is Ownable {
             } else {
                 // if not contract
                 if (token != address(0)) {
-                    IERC223TokenCloned(token).mint(to, value);
+                    IERC20TokenCloned(token).mint(to, value);
                 } else {
                     token = originalToken;
-                    if (token <= MAX_NATIVE_COINS) {
+                    if (token == NATIVE_COINS) {
                         to.safeTransferETH(value);
                     } else {
                         tokenDeposits[token] -= value;
@@ -1018,13 +963,7 @@ contract CallistoBridge is Ownable {
         uint256 toChainId // destination chain Id where will be claimed tokens
     ) external payable notFrozen {
         require(receiver != address(0), "Incorrect receiver address");
-        uint256 fee = swapFee; // fee in percent with 4 decimals
-        if (fee !=0 && value > 100) {
-            fee = value * fee / 1000000; // fee amount
-            value -= fee;
-            token.safeTransfer(feeTo, fee); // take fee
-        }
-        (address originalToken, uint256 originalChainID) = _deposit(
+        (address originalToken, uint256 originalChainID, uint256 valueWithoutFee) = _deposit(
             token,
             value,
             toChainId
@@ -1034,36 +973,46 @@ contract CallistoBridge is Ownable {
             originalChainID,
             token,
             receiver,
-            value,
+            valueWithoutFee,
             toChainId
         );
     }
 
     function _deposit(
-        address token, // token that user send (if token address < 32, then send native coin)
+        address token, // token that user send (if token is address(1), then send native coin)
         uint256 value, // tokens value
         uint256 toChainId // destination chain Id where will be claimed tokens
-    ) internal returns (address originalToken, uint256 originalChainID) {
-        require(isSupported[toChainId], "Destination chain not supported");
+    ) internal returns (address originalToken, uint256 originalChainID, uint256 valueWithoutFee) {
+        require(isSupported[toChainId] && toChainId != block.chainid, "Destination chain not supported");
+        uint256 fee = getBridgeFee(token); // fee in percent with 4 decimals
+        if (fee !=0) {
+            fee = value * fee / 1000000; // fee amount
+            valueWithoutFee = value - fee;
+            if (fee != 0) {
+                if (token == NATIVE_COINS) {
+                    feeTo.safeTransferETH(fee);
+                } else {
+                    token.safeTransferFrom(msg.sender, feeTo, fee);
+                }
+                emit Fee(msg.sender, token, fee);
+            }
+        } else {
+            valueWithoutFee = value;
+        }
+
         bytes32 key = nativeToToken[token];
         require(uint256(key) != 0, "Token wasn't added");
         originalToken = addedTokens[key].token;
         originalChainID = addedTokens[key].chainID;
-        uint256 fee = msg.value;
-        if (token <= MAX_NATIVE_COINS) {
+        if (token == NATIVE_COINS) {
             require(value <= msg.value, "Wrong value");
-            fee -= value;
         } else {
             if (addedTokens[key].wrappedToken == token) {
-                IERC223TokenCloned(token).burnFrom(msg.sender, value);
+                IERC20TokenCloned(token).burnFrom(msg.sender, valueWithoutFee);
             } else {
-                tokenDeposits[token] += value;
-                token.safeTransferFrom(msg.sender, address(this), value);
+                tokenDeposits[token] += valueWithoutFee;
+                token.safeTransferFrom(msg.sender, address(this), valueWithoutFee);
             }
-        }
-        if (fee != 0) {
-            feeTo.safeTransferETH(fee);
-            emit Fee(msg.sender, fee);
         }
     }
 
@@ -1104,10 +1053,10 @@ contract CallistoBridge is Ownable {
         }
         address token = addedTokens[key].wrappedToken;
         if (token != address(0)) {
-            IERC223TokenCloned(token).mint(to, value);
+            IERC20TokenCloned(token).mint(to, value);
         } else {
             token = originalToken;
-            if (token <= MAX_NATIVE_COINS) {
+            if (token == NATIVE_COINS) {
                 to.safeTransferETH(value);
             } else {
                 tokenDeposits[token] -= value;
@@ -1142,9 +1091,9 @@ contract CallistoBridge is Ownable {
             if (index != 0 && (set & mask) == 0) {
                 set |= mask;
                 uniqSig++;
-                if (authority == must) must = address(0);
                 if (requiredAuthorities[authority]) required++;
             }
+            if (authority == must) must = address(0);   // must authority for specific token may not be approved by other authorities
         }
         require(threshold <= uniqSig, "Require more signatures");
         require(
