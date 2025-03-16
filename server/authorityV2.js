@@ -1,199 +1,184 @@
-/*
 
-
-Import this module in server app using: 
-const auth = require("./authority.js");
-
-Call function auth.authorize(txId, fromChainId), 
-where:
-    `txId` - transaction hash, 
-    `fromChainId` - chain ID where transaction was sent.
-returns JSON object,
-where:
-if all good:
-    "isSuccess" - true,
-    "signature" - authority signature,
-    "token" - token to receive,
-    "value" - tokens amount,
-    "to"- receiver (user's) address,
-    "chainId" - chain ID where to claim token,
-    "bridge" - address of bridge on destination network.
-
-in case of error: 
-    "isSuccess" - false,
-    "message" - error description
-
-
-Example:
-
-    auth.authorize(txId, fromChainId)
-    .then(resp => {
-        response.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
-        response.end(JSON.stringify(resp));
-
-    })
-    .catch(err => {
-        response.writeHead(404, {'Content-Type': 'text/html'});
-        response.end(err.toString());            
-    })
-
-
-In this example of `.env` the authority address is 0x3d40De3046a7D7E2Aa9E8097A86e49c699A0170B
-*/
-
-const Web3 = require('web3');
+const { ethers } = require('ethers');
 require('dotenv').config(); // if use .env file for environment variables
 
 const pk = process.env.AUTHORITY_PK;  // Private key should be hidden
 
-const blockConfirmations = {
-    "20729" : 1, // CLO test net
-    "820" : 64, // CLO main net
-    "97" : 1,  // BSC test net
-    "56" : 3,  // BSC main net
-    "1"  : 4,   // ETH main net
-    "61" : 500,  // ETC main net
-    "199": 4,  // BTTC main net  
-    "250" : 12, // Fantom Opera mainnet
-    "137" : 128, // Polygon Mainnet
-    "43114" : 12, // Avalanche Mainnet
-    "1313161554" : 1200, // Aurora mainnet
-    "5" : 1, // ETH Goerli testnet        
-}
-
-const bridgeNFTContracts = {
-    "20729" : "0xe96E157d994300B50073559820Fe49a015ecEf1E", // CLO test net
-    "820" : "", // CLO main net
-    "97" : "0x5E4BC70Df60FFBBab1290bD40d87aa095230A97e",  // BSC test net
-    "56" : "",  // BSC main net
-    "1" : "",   // ETH main net
-    "61" : "",  // ETC main net
-    "199": "",  // BTTC main net
+const Chains = {
+    "121224": {
+        name: "Fushuma",
+        coin: "FUMA",
+        bridge: "0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643",
+        rpc: "https://rpc.fushuma.com/",
+        confirmations: 10,
+    },
+    "820": {
+        name: "Callisto",
+        coin: "CLO",
+        bridge: "0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643",
+        rpc: "https://rpc.callistodao.org/",
+        confirmations: 64,
+    },
+    /*
+    "56": {
+        name: "Binance Smart Chain",
+        coin: "BNB",
+        bridge: "",
+        rpc: "https://bsc-dataseed.binance.org/",
+        confirmations: 3,
+    },
+    "1": {
+        name: "Ethereum",
+        coin: "ETH",
+        bridge: "",
+        rpc: "https://nodes.mewapi.io/rpc/eth",
+        confirmations: 4,
+    },
+    "61": {
+        name: "Ethereum Classic",
+        coin: "ETC",
+        bridge: "",
+        rpc: "https://etc.etcdesktop.com",
+        confirmations: 500,
+    },
+    "199": {
+        name: "Bitcoin Token",
+        coin: "BTTC",
+        bridge: "",
+        rpc: "https://rpc.bt.io/",
+        confirmations: 4,
+    },
+    "250": {
+        name: "Fantom Opera",
+        coin: "FTM",
+        bridge: "",
+        rpc: "https://rpcapi.fantom.network/",
+        confirmations: 12,
+    },
+    "137": {
+        name: "Polygon",
+        coin: "POL",
+        bridge: "",
+        rpc: "https://polygon-rpc.com/",
+        confirmations: 128,
+    },
+    "43114": {
+        name: "Avalanche",
+        coin: "AVAX",
+        bridge: "",
+        rpc: "https://api.avax.network/ext/bc/C/rpc",
+        confirmations: 12,
+    },
+    */
 };
 
-const bridgeContracts = {
-    "20729" : "0xE1AF7a91EBC36E66D89a6201680dC5242796b246", // CLO test net
-    "820" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // CLO main net
-    "97" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC test net
-    "56" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BSC main net
-    "1" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",   // ETH main net
-    "61" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // ETC main net
-    "199": "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56",  // BTTC main net
-    "250" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Fantom Opera mainnet
-    "137" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Polygon Mainnet
-    "43114" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Avalanche Mainnet
-    "1313161554" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // Aurora mainnet
-    "5" : "0x9a1fc8C0369D49f3040bF49c1490E7006657ea56", // ETH Goerli testnet
-};
+const bridgeV2ABI = [
+    "event Deposit(address indexed originalToken, uint256 originalChainID, address indexed token, address indexed receiver, uint256 value, uint256 toChainId)",
+    "event BridgeToContract(address indexed originalToken, uint256 originalChainID, address indexed token, address indexed receiver, uint256 value, uint256 toChainId, address toContract, bytes data)",
+    "function getToken(address nativeToken) external view returns (tuple(address token, uint256 chainID, address wrappedToken, address authority) tokenInfo)",
+];
 
-const providers = {
-    "121224": "https://rpc.fushuma.com/", // Fushuma
-    "20729" : "https://testnet-rpc.callisto.network", // CLO test net
-    "820" : "https://rpc.callisto.network/", // CLO main net
-    "97" : "https://data-seed-prebsc-1-s2.binance.org:8545/",  // BSC test net
-    "56" : "https://bsc-dataseed.binance.org/",  // BSC main net
-    "1" : "https://nodes.mewapi.io/rpc/eth",   // ETH main net
-    "61" : "https://etc.etcdesktop.com", // ETC main net
-    "199": "https://rpc.bt.io/",  // BTTC main net
-    "250" : "https://rpcapi.fantom.network/", // Fantom Opera mainnet
-    "137" : "https://polygon-rpc.com/", // Polygon Mainnet
-    "43114" : "https://api.avax.network/ext/bc/C/rpc", // Avalanche Mainnet
-    "1313161554" : "https://mainnet.aurora.dev", // Aurora mainnet
-    "5" : "https://goerli.infura.io/v3/", // ETH Goerli testnet
+/*
+// Test function
+// Call this function to test the code
+test();
+async function test() {
+    var resp = "";
+    resp = await authorize("0x5dc0bdea37f75fd62cc2c5920f6c6b009b9de0ce3065a83bfdf1af96ff508f4a", "820");    // bridgeToContract
+    console.log(resp);
+    resp = await authorize("0x876c3b158a6e95005c2a3331a8d3849d3fbb3ebefd3966c5c9f93605c41aeed4", "820");    // depositTokens
+    console.log(resp);
+    resp = await addToken("0x0000000000000000000000000000000000000001", "121224");
+    console.log(resp);
+    //resp = JSON.stringify(resp)
 }
-
-const deposit_event_abi = [
-    {"type":"address","name":"token","internalType":"address","indexed":true},
-    {"type":"address","name":"sender","internalType":"address","indexed":true},
-    {"type":"uint256","name":"value","internalType":"uint256","indexed":false},
-    {"type":"uint256","name":"toChainId","internalType":"uint256","indexed":false},
-    {"type":"address","name":"toToken","internalType":"address","indexed":false}
-];
-
-const BridgeToContract_event_abi = [
-    {"type":"address","name":"token","internalType":"address","indexed":true},
-    {"type":"address","name":"sender","internalType":"address","indexed":true},
-    {"type":"uint256","name":"value","internalType":"uint256","indexed":false},
-    {"type":"uint256","name":"toChainId","internalType":"uint256","indexed":false},
-    {"type":"address","name":"toToken","internalType":"address","indexed":false},
-    {"type":"address","name":"toContract","internalType":"address","indexed":false},
-    {"type":"bytes","name":"data","internalType":"bytes","indexed":false}
-];
+*/
 
 // call this function to get authorization signature
 // params: txId = deposit transaction hash, fromChainId = chain ID where transaction was sent.
-// isNFT: "true" for NFT bridge, "false" for token bridge
-// returns: on success {isSuccess: true, message: sig.signature};
+// returns: on success {isSuccess: true, signature: sig, ...};
 // on error: {isSuccess: false, message: error_message}; 
-async function authorize(txId, fromChainId, isNFT) {
-    var provider = providers[fromChainId];
-
-    var bridgeContract;
-    if (isNFT) {
-        bridgeContract = bridgeNFTContracts[fromChainId];
-    } else {
-        bridgeContract = bridgeContracts[fromChainId];
+async function authorize(txId, fromChainId) {
+    if (!Chains.hasOwnProperty(fromChainId)) {
+        let msg = "Chain ID:" + fromChainId + " is not supported";
+        //console.log(msg);
+        return {isSuccess: false, message: msg};
     }
-    
+    const rpc = Chains[fromChainId].rpc;
+    const bridgeContract = Chains[fromChainId].bridge;
+    const blockConfirmations = Chains[fromChainId].confirmations;    
+
     if (!bridgeContract) {
         let msg = "No bridgeContract for chain ID:" + fromChainId;
         //console.log(msg);
         return {isSuccess: false, message: msg};
     }
-    if (!provider) {
-        let msg = "No provider for chain ID:" + fromChainId;
+    if (!rpc) {
+        let msg = "No rpc for chain ID:" + fromChainId;
         //console.log(msg);
         return {isSuccess: false, message: msg};
     }
-    var web3 = new Web3(provider);
-    var lastBlock = await web3.eth.getBlockNumber();
-
-    return web3.eth.getTransactionReceipt(txId)
-    .then(receipt => {
+    const provider = new ethers.JsonRpcProvider(rpc);
+    var lastBlock = await provider.getBlockNumber();
+    const iface = new ethers.Interface(bridgeV2ABI);
+    return provider.getTransactionReceipt(txId)
+    .then(async receipt => {
         if (receipt && receipt.status) {
-            if (lastBlock - receipt.blockNumber < blockConfirmations[fromChainId]) { // require at least 12 confirmation
-                let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of " + blockConfirmations[fromChainId];
+            if (lastBlock - receipt.blockNumber < blockConfirmations) { // require at least 12 confirmation
+                let msg = "Confirming: " + (lastBlock - receipt.blockNumber) + " of " + blockConfirmations;
                 console.log(msg);
                 return {isSuccess: false, message: msg};
             }
             for (var i = 0; i < receipt.logs.length; i++) {
                 let element = receipt.logs[i];
-                if (element.topics[0] == "0xf5dd9317b9e63ac316ce44acc85f670b54b339cfa3e9076e1dd55065b922314b"  // Deposit
-                    && element.address == bridgeContract
-                    && element.transactionHash == txId) 
+                if (BigInt(element.address) != BigInt(bridgeContract) || element.transactionHash != txId) continue; // skip if not bridge contract
+                var messageHash = "";
+                var ret;
+                if (element.topics[0] == "0xc9e84ed7aa56cf1771d0373f4b6380ccc9c7cdae154f287abf95c48f72e7f0cf")  // Deposit
                 {
-                    element.topics.shift(); // remove 
-                    let p = web3.eth.abi.decodeLog(deposit_event_abi, element.data, element.topics);
+                    let p = iface.parseLog(element).args;
                     //console.log(p);
-                    let toBridge;
-                    let messageHash;
-                    if (isNFT){
-                        toBridge = bridgeNFTContracts[p.toChainId];
-                        messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId, toBridge);
-                    } else {
-                        toBridge = bridgeContracts[p.toChainId];
-                        messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId);
-                    }
-                    //console.log(messageHash);
-                    sig = web3.eth.accounts.sign(messageHash, pk);
-                    //console.log(sig);
-                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, bridge: toBridge};
-                    //console.log(ret);
-                    return ret;
-                } else if (element.topics[0] == "0x8e3af9ffa3a105195ae58520a6e3ab241268521cd0a0ca519896e650d4fbebe4"   // BridgeToContract
-                    && element.address == bridgeContract
-                    && element.transactionHash == txId) 
+                    let toBridge = Chains[p.toChainId].bridge;
+                    messageHash = ethers.solidityPackedKeccak256(
+                        ["address", "uint256", "address", "uint256", "bytes32", "uint256", "uint256", "address"], 
+                        [p.originalToken, p.originalChainID, p.receiver, p.value, txId, fromChainId, p.toChainId, toBridge]
+                    );
+                    ret = {
+                        isSuccess: true,
+                        originalToken: p.originalToken,
+                        originalChainID: p.originalChainID.toString(),
+                        value: p.value.toString(),
+                        to: p.receiver,
+                        chainId: p.toChainId.toString(),
+                        bridge: toBridge
+                    };
+                } else if (element.topics[0] == "0xeaa11317bb61110cf1035a22a7b6b4c716b909b47954d51ee13de1627fdf0f50")   // BridgeToContract
                 {
-                    element.topics.shift(); // remove 
-                    var p = web3.eth.abi.decodeLog(BridgeToContract_event_abi, element.data, element.topics);
+                    let p = iface.parseLog(element).args;
                     //console.log(p);
-                    var messageHash = web3.utils.soliditySha3(p.toToken, p.sender, p.value, txId, fromChainId, p.toChainId, p.toContract, p.data);
-                    //console.log(messageHash);
-                    sig = web3.eth.accounts.sign(messageHash, pk);
-                    //console.log(sig);
-                    let ret = {isSuccess: true, signature: sig.signature, token: p.toToken, value: p.value, to: p.sender, chainId: p.toChainId, toContract: p.toContract, data: p.data, bridge: bridgeContracts[p.toChainId]};
+                    let toBridge = Chains[p.toChainId].bridge;
+                    messageHash = ethers.solidityPackedKeccak256(
+                        ["address", "uint256", "address", "uint256", "bytes32", "uint256", "uint256", "address", "address", "bytes"], 
+                        [p.originalToken, p.originalChainID, p.receiver, p.value, txId, fromChainId, p.toChainId, toBridge, p.toContract, p.data]
+                    );
+                    ret = {
+                        isSuccess: true,
+                        originalToken: p.originalToken,
+                        originalChainID: p.originalChainID.toString(),
+                        value: p.value.toString(),
+                        to: p.receiver,
+                        chainId: p.toChainId.toString(),
+                        toContract: p.toContract,
+                        data: p.data,
+                        bridge: toBridge
+                    };
+                }
+                if (messageHash != "") {    // sign message
+                    const wallet = new ethers.Wallet(pk);
+                    const sig = await wallet.signMessage(ethers.getBytes(messageHash));
+                    ret.signature = sig;
                     //console.log(ret);
-                    return ret;
+                    return ret;                    
                 }
             }
         }
@@ -207,4 +192,62 @@ async function authorize(txId, fromChainId, isNFT) {
     })
 }
 
-module.exports.authorize = authorize;
+// call this function to add token to the bridge
+// params: token = original token address, chainId = chain ID of original token
+// returns: on success {isSuccess: true, signature: sig, ...};
+// on error: {isSuccess: false, message: error_message}; 
+async function addToken(token, chainId) {
+    if (!Chains.hasOwnProperty(chainId)) {
+        let msg = "Chain ID:" + chainId + " is not supported";
+        //console.log(msg);
+        return {isSuccess: false, message: msg};
+    }
+    try {
+        const rpc = Chains[chainId].rpc;
+        const bridgeContract = Chains[chainId].bridge;
+        const provider = new ethers.JsonRpcProvider(rpc);
+        const contract = new ethers.Contract(bridgeContract, bridgeV2ABI, provider);
+        var name = "";
+        var symbol = "";
+        var decimals;
+        if (BigInt(token) == 1n) {
+            //native coin
+            name = Chains[chainId].coin;
+            symbol = Chains[chainId].coin;
+            decimals = 18;
+        } else {
+            // get token info
+            const r = await contract.addToken(token);
+            if (BigInt(r.token) == BigInt(token) && r.chainID == BigInt(chainId) && BigInt(r.wrappedToken) == 0n) {
+                const tokenContract = new ethers.Contract(token, ["function name() view returns (string)", "function symbol() view returns (string)", "function decimals() view returns (uint8)"], provider);
+                name = await tokenContract.name();
+                symbol = await tokenContract.symbol();
+                decimals = await tokenContract.decimals();
+            } else {
+                return {isSuccess: false, message: "Incorrect original token address or chainId or token is wrapped. Select chain where original token is located."};
+            }
+        }
+        if(symbol == "" || name == "") {
+            return {isSuccess: false, message: "Failed to get token name or symbol"};
+        }
+        const messageHash = ethers.solidityPackedKeccak256(
+            ["address", "uint256", "uint256", "string", "string"], 
+            [token, chainId, decimals, name, symbol]
+        );
+        const wallet = new ethers.Wallet(pk);
+        const sig = await wallet.signMessage(ethers.getBytes(messageHash));
+        return {
+            isSuccess: true,
+            signature: sig,
+            name: name,
+            symbol: symbol,
+            decimals: decimals.toString()
+        };
+
+    } catch (err) {
+        console.log(err);
+        return {isSuccess: false, message: err.toString()};
+    }
+}
+
+//module.exports = {authorize, addToken};

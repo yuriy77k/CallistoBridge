@@ -1,8 +1,6 @@
 # Bridge v2
 ## Description
 
-## Bridge v2
-
 ### Deposit tokens
 
 To swap tokens from one chain to another, a user calls the function `depositTokens()`. 
@@ -38,7 +36,7 @@ This function is the same as in v1.
 
 ### Claim tokens
 
-[Claim](https://github.com/yuriy77k/CallistoBridge/blob/27e460fb16cbf91e1a906a8592f9e1f1634234a2/contracts/BridgeV2.sol#L1071-L1079) tokens from the bridge.
+Claim tokens from the bridge.
 
 ```Solidity
     function claim(
@@ -93,7 +91,7 @@ Allow anybody to add new token (original) to the bridge.
 
 ### Add wrapped token 
 
-Allow to create bridge between original token, that was added by function [addToken()](https://github.com/yuriy77k/CallistoBridge/blob/27e460fb16cbf91e1a906a8592f9e1f1634234a2/contracts/BridgeV2.sol#L807-L808) and new created wrapped token on the current chain.
+Allow to create bridge between original token, that was added by function `addToken()` and new created wrapped token on the current chain.
 
 ```Solidity
     function addWrappedToken(
@@ -111,8 +109,11 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 2. On BSC and Callisto chain we call function `addWrappedToken()` with parameters according token on Ethereum chain (token address, chain Id, decimals, name, symbol).
 
 
-## Deployed addresses 
+## Deployment 
 - On all supported chains: `0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643` (deployed in the second transaction from wallet `0x851bE0807823c7667Cd04971CaF758Bd14eb002D`)
+- Founder's and Owner's Multisig wallets should be deployed prior.
+1. Deploy `BridgeV2`
+2. Deploy `BridgeUpgradeableProxy`
 
 ### Fushuma
 
@@ -123,3 +124,9 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 ### Callisto
 
 - Bridge proxy (use to for contract communication): https://explorer.callistodao.org/address/0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643/read-proxy#address-tabs
+
+## Authority
+- test Authority `0x9e35ec5917780fBb87f26Bfa470200e1e552df5a` https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/
+  - Add token: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/addToken?token=0x0000000000000000000000000000000000000001&chain=121224
+  - Claim: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/auth?tx=0x876c3b158a6e95005c2a3331a8d3849d3fbb3ebefd3966c5c9f93605c41aeed4&chain=820
+  - Claim to contract: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/auth?tx=0x5dc0bdea37f75fd62cc2c5920f6c6b009b9de0ce3065a83bfdf1af96ff508f4a&chain=820

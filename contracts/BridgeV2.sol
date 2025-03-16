@@ -432,7 +432,7 @@ contract BridgeV2 is Ownable {
     event SetTokenAuthority(address indexed token, uint256 chainId, address authority);
     event SetFeeTo(address previousFeeTo, address newFeeTo);
     event SetBridgeFee(address token, uint256 fee); // fee in percent with 4 decimals (i.e. 1.5% = 15000). 0 - no fee. bridgeFee[address(0)] - global fee
-    event SetThreshold(uint256 threshold);
+    event SetThreshold(uint256 threshold, uint256 minRequiredAuthorities);
     event SetContractCaller(address newContractCaller);
     event Deposit(
         address indexed originalToken,
@@ -493,55 +493,43 @@ contract BridgeV2 is Ownable {
         address newFounders,
         address _feeTo,    // wallet which receive fees from bridge
         address _tokenImplementation,   // token implementation contract
-        //address _contractCaller,        // intermediate contract caller
         uint256 _threshold,             // minimum authorities required to approve bridge transaction
         address[] calldata _authorities, // addresses of authorities. _authorities[0] is requiredAuthority
+        uint256[] calldata _chainID,     // supported chain IDs (exclude native chain)
         string calldata _nativeCoin     // name of native coin (i.e. ETH, BNB, MATIC)
     ) external {
         require(
+            _owner == address(0) && // run only once
             newOwner != address(0) &&
             newFounders != address(0) &&
-            _owner == address(0) &&
-            _feeTo != address(0)
-        ); // run only once
-        _owner = newOwner;
+            _feeTo != address(0) &&
+            _tokenImplementation != address(0) &&
+            _threshold != 0
+        );
+
+        _owner = msg.sender;    // set temporary owner to complete initialization
         founders = newFounders;
-        emit OwnershipTransferred(address(0), newOwner);
-        require(
-            _tokenImplementation != address(0),
-            "Wrong tokenImplementation"
-        );
-        require(
-            _threshold != 0,
-            "Wrong threshold"
-        );
-        require(
-            authorities.length() + _authorities.length < 255, 
-            "Too many authorities"
-        );
-        for (uint256 i = 0; i < _authorities.length; i++){
-            require(_authorities[i] != address(0), "Zero address");
-            require(authorities.add(_authorities[i]), "Authority already added");
-            emit SetAuthority(_authorities[i], true);
-        }        
+        setupMode = 1; // allow setup after deployment
+        addAuthorities(_authorities);
+        setSupportedChain(_chainID, true);
         tokenImplementation = _tokenImplementation;
-        //contractCaller = _contractCaller;
         contractCaller = address(new ContractCaller());
-        //emit SetContractCaller(_contractCaller);
         feeTo = _feeTo;
         emit SetFeeTo(address(0), _feeTo);
+        // set threshold and required authorities
         threshold = _threshold;
-        emit SetThreshold(_threshold);
+        minRequiredAuthorities = 1;
+        emit SetThreshold(_threshold, 1);
         requiredAuthorities[_authorities[0]] = true;
         emit SetRequiredAuthority(_authorities[0], true);
-        minRequiredAuthorities = 1;
-        setupMode = 1; // allow setup after deployment
         // add native coin to bridge
         bytes32 key = keccak256(abi.encodePacked(address(1), block.chainid));
         addedTokens[key].token = address(1);
         addedTokens[key].chainID = block.chainid;
         nativeToToken[address(1)] = key;
         emit AddToken(address(1), block.chainid, 18, _nativeCoin, _nativeCoin);
+        _owner = newOwner;  // set owner
+        emit OwnershipTransferred(address(0), newOwner);
     }
 
     constructor () {
@@ -570,7 +558,7 @@ contract BridgeV2 is Ownable {
 
     function requestUpgrade(address newContract) external onlyOwner {
         require(newContract != address(0), "Zero address");
-        uint256 validFrom = block.timestamp;// + 3 days; // remove delay for testing
+        uint256 validFrom = block.timestamp + 3 days; // remove delay for testing
         upgradeData = Upgrade(newContract, uint64(validFrom));
         emit UpgradeRequest(newContract, validFrom);
     }
@@ -628,7 +616,7 @@ contract BridgeV2 is Ownable {
     }
 
     // add authorities
-    function addAuthorities(address[] calldata _authorities) external onlyOwner onlySetup {
+    function addAuthorities(address[] calldata _authorities) public onlyOwner onlySetup {
         require(authorities.length() + _authorities.length < 255, "Too many authorities");
         for (uint256 i = 0; i < _authorities.length; i++){
             require(_authorities[i] != address(0), "Zero address");
@@ -665,7 +653,7 @@ contract BridgeV2 is Ownable {
     }
 
     // fee percent with 4 decimals (i.e. 1.5% = 15000) that will subtracted from deposited tokens. 0 - no fee. bridgeFee[address(0)] - global fee
-    function setBridgeFee(address token, uint256 fee) external onlyOwner onlySetup {
+    function setBridgeFee(address token, uint256 fee) external onlyOwner {
         require(fee <= 100000, "Too high fee"); // fee must be less than 10% (99999 max). If fee == 100000, it will set 0 fee for specific token
         bridgeFee[token] = fee;
         emit SetBridgeFee(token, fee);
@@ -680,6 +668,7 @@ contract BridgeV2 is Ownable {
     }
 
     // set threshold - minimum number of signatures required to approve swap
+    // minRequiredAuthorities - minimum number of trusted authorities required to sign transaction
     function setThreshold(uint256 _threshold, uint256 _minRequiredAuthorities) external onlyOwner onlySetup {
         require(
             _threshold != 0 && _threshold <= authorities.length() && _minRequiredAuthorities <= _threshold,
@@ -687,7 +676,7 @@ contract BridgeV2 is Ownable {
         );
         minRequiredAuthorities = _minRequiredAuthorities;
         threshold = _threshold;
-        emit SetThreshold(_threshold);
+        emit SetThreshold(_threshold, _minRequiredAuthorities);
     }
 
     // set contractCaller address
@@ -700,11 +689,10 @@ contract BridgeV2 is Ownable {
         emit SetContractCaller(newContractCaller);
     }
 
-    // set supported chain
+    // set foreign supported chain (exclude native chain)
     function setSupportedChain(uint256[] calldata _chainID, bool _isSupported)
-        external
+        public
         onlyOwner
-        onlySetup
     {
         for (uint256 i = 0; i < _chainID.length; i++){
             isSupported[_chainID[i]] = _isSupported;
@@ -792,7 +780,7 @@ contract BridgeV2 is Ownable {
         string calldata symbol, // original token symbol
         bytes[] memory sig // authority signatures
     ) external {
-        require(chainID != block.chainid, "Only foreign token");
+        require(isSupported[chainID] && chainID != block.chainid, "Source chain not supported");
         bytes32 key = keccak256(abi.encodePacked(token, chainID));
         require(addedTokens[key].token == address(0), "Token already added");
         bytes32 messageHash = keccak256(
@@ -871,15 +859,7 @@ contract BridgeV2 is Ownable {
         bytes memory data, // this data will be passed to contract call (ABI encoded parameters)
         bytes[] memory sig // authority signatures
     ) external notFrozen {
-        require(
-            !isTxProcessed[fromChainId][txId],
-            "Transaction already processed"
-        );
-        bytes32 key = keccak256(
-            abi.encodePacked(originalToken, originalChainID)
-        );
-        require(addedTokens[key].token != address(0), "token not exist");
-        isTxProcessed[fromChainId][txId] = true;
+        bytes32 key = validate(originalToken, originalChainID, txId, fromChainId);
         // Check signature
         {
             address must = addedTokens[key].authority;
@@ -1026,15 +1006,7 @@ contract BridgeV2 is Ownable {
         uint256 fromChainId, // chain ID where user deposited
         bytes[] memory sig // authority signatures
     ) external notFrozen {
-        require(
-            !isTxProcessed[fromChainId][txId],
-            "Transaction already processed"
-        );
-        bytes32 key = keccak256(
-            abi.encodePacked(originalToken, originalChainID)
-        );
-        require(addedTokens[key].token != address(0), "token not exist");
-        isTxProcessed[fromChainId][txId] = true;
+        bytes32 key = validate(originalToken, originalChainID, txId, fromChainId);
         {
             address must = addedTokens[key].authority;
             bytes32 messageHash = keccak256(
@@ -1072,6 +1044,23 @@ contract BridgeV2 is Ownable {
             txId,
             fromChainId
         );
+    }
+
+    // validate tx and token for claim request
+    function validate(
+        address originalToken, // original token
+        uint256 originalChainID, // original chain ID
+        bytes32 txId, // deposit transaction hash on fromChain
+        uint256 fromChainId // chain ID where user deposited
+    ) internal returns (bytes32 key) {
+        require(isSupported[fromChainId], "Source chain not supported");
+        require(
+            !isTxProcessed[fromChainId][txId],
+            "Transaction already processed"
+        );
+        key = keccak256(abi.encodePacked(originalToken, originalChainID));
+        require(addedTokens[key].token != address(0), "token not exist");
+        isTxProcessed[fromChainId][txId] = true;
     }
 
     // Signature methods

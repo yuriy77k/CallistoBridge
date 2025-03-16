@@ -136,4 +136,4 @@ dist
 # contracts
 contracts/artifacts/
 
-!nodejs_layer.zip
+!aws_lambda.zip
