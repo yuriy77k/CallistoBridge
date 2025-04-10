@@ -111,10 +111,67 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 
 ## Deployment 
 - On all supported chains: `0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643` (deployed in the second transaction from wallet `0x851bE0807823c7667Cd04971CaF758Bd14eb002D`)
-- Founder's and Owner's Multisig wallets should be deployed prior.
-1. Deploy `BridgeV2`
-2. Deploy `BridgeUpgradeableProxy`
+- Founder's and Owner's Multisig owners' wallets: 
+```Solidity
+[
+    "0x9e6993DD8CA5C90777CDCf888eA7f54c641a2A4E",
+    "0x45FAc82b24511927a201C2cdFC506625dECe3d22",
+    "0xC8e420222d4c93355776eD77f9A34757fb6f3eea",
+    "0x7152B9A7BD708750892e577Fcc96ea24FDDF37a4"
+]
+```
+- Authorities: 
+```Solidity
+[
+    "0x9cF318Cf120F98F1ad82F27041CfD28c9e0c0C9b",
+    "0x5047e1df36E80722627D2cccf99006D578FE3797",
+    "0x9fd61d384f7caa39C8be1107FfA91dA9F0F9E280",
+    "0x3A93976Cf512A6d671358AAC41C91C8D8DB3EAAE"
+]
+```
+- Chains ID for `[Fushuma, Polygon, BNB, Ethereum, Unichain, Arbitrum, Base]`:
+```Solidity
+[
+    "121224",
+    "137",
+    "56",
+    "1",
+    "130",
+    "42161",
+    "8453"
+]
+```
 
+1. Deploy `ERC20_implementation` (`0xE42fA5629b7EcDfba39a09C284B153FFA896E862`)
+2. Deploy `BridgeV2` (`0x623Ef498161BFabB37EB85Cd8B65230226a54C87`)
+3. Deploy multisig wallet for Bridge Owner (`0x4fE48F0a718B00A553f9b8e78E793c522c374b45`)
+4. Deploy multisig weller fot Bridge Founder (`0x564F12052cd0e8F988ce531a533ba22598061463`)
+5. Deploy `BridgeUpgradeableProxy` (`0x7304ac11BE92A013dA2a8a9D77330eA5C1531462`)
+6. Initialize Bridge (proxy)
+
+Deployment cost about 10M gas.
+
+### Deployed contracts
+
+Bridge: `0x7304ac11BE92A013dA2a8a9D77330eA5C1531462` (address is the same on all supported chains).
+
+Contracts deployed on: 
+- [Fushuma](https://fumascan.com/address/0x7304ac11BE92A013dA2a8a9D77330eA5C1531462?tab=read_proxy_contract) (chainId: 121224) 
+- [Ethereum](https://etherscan.io/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 1) 
+- [BNB](https://bscscan.com/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 56) 
+- [Base](https://basescan.org/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 8453) 
+- [Arbitrum](https://arbiscan.io/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 42161) 
+- [Polygon](https://polygonscan.com/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 137) 
+- [Unichain](https://uniscan.xyz/address/0x7304ac11be92a013da2a8a9d77330ea5c1531462#readProxyContract) (chainId: 130) 
+
+Multisigs addresses on all supported chains are the identical:
+- Bridge Owner: `0x4fE48F0a718B00A553f9b8e78E793c522c374b45`.
+- Bridge Founder `0x564F12052cd0e8F988ce531a533ba22598061463`.
+
+
+### Authority
+
+## Test deployment
 ### Fushuma
 
 - Bridge proxy (use to for contract communication): https://fumascan.com/address/0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643?tab=read_proxy_contract
@@ -125,7 +182,7 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 
 - Bridge proxy (use to for contract communication): https://explorer.callistodao.org/address/0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643/read-proxy#address-tabs
 
-## Authority
+### Authority
 - test Authority `0x9e35ec5917780fBb87f26Bfa470200e1e552df5a` https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/
   - Add token: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/addToken?token=0x0000000000000000000000000000000000000001&chain=121224
   - Claim: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/auth?tx=0x876c3b158a6e95005c2a3331a8d3849d3fbb3ebefd3966c5c9f93605c41aeed4&chain=820

@@ -8,68 +8,59 @@ const Chains = {
     "121224": {
         name: "Fushuma",
         coin: "FUMA",
-        bridge: "0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
         rpc: "https://rpc.fushuma.com/",
-        confirmations: 10,
-    },
-    "820": {
-        name: "Callisto",
-        coin: "CLO",
-        bridge: "0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643",
-        rpc: "https://rpc.callistodao.org/",
         confirmations: 64,
     },
-    /*
+    "137": {
+        name: "Polygon",
+        coin: "POL",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
+        rpc: "https://polygon-rpc.com/",
+        confirmations: 300,
+    },
     "56": {
         name: "Binance Smart Chain",
         coin: "BNB",
-        bridge: "",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
         rpc: "https://bsc-dataseed.binance.org/",
         confirmations: 3,
     },
     "1": {
         name: "Ethereum",
         coin: "ETH",
-        bridge: "",
-        rpc: "https://nodes.mewapi.io/rpc/eth",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
+        rpc: "https://eth.drpc.org",
         confirmations: 4,
     },
-    "61": {
-        name: "Ethereum Classic",
-        coin: "ETC",
-        bridge: "",
-        rpc: "https://etc.etcdesktop.com",
-        confirmations: 500,
+    "130": {
+        name: "Unichain",
+        coin: "ETH",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
+        rpc: "https://mainnet.unichain.org",
+        confirmations: 600,
     },
-    "199": {
-        name: "Bitcoin Token",
-        coin: "BTTC",
-        bridge: "",
-        rpc: "https://rpc.bt.io/",
-        confirmations: 4,
+    "42161": {
+        name: "Arbitrum",
+        coin: "ETH",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
+        rpc: "https://arbitrum-one-rpc.publicnode.com",
+        confirmations: 1200,
     },
-    "250": {
-        name: "Fantom Opera",
-        coin: "FTM",
-        bridge: "",
-        rpc: "https://rpcapi.fantom.network/",
-        confirmations: 12,
+    "8453": {
+        name: "Base",
+        coin: "ETH",
+        bridge: "0x7304ac11BE92A013dA2a8a9D77330eA5C1531462",
+        rpc: "https://mainnet.base.org",
+        confirmations: 300,
     },
-    "137": {
-        name: "Polygon",
-        coin: "POL",
-        bridge: "",
-        rpc: "https://polygon-rpc.com/",
-        confirmations: 128,
-    },
-    "43114": {
-        name: "Avalanche",
-        coin: "AVAX",
-        bridge: "",
-        rpc: "https://api.avax.network/ext/bc/C/rpc",
-        confirmations: 12,
-    },
-    */
+    /*"820": {
+        name: "Callisto",
+        coin: "CLO",
+        bridge: "0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643",
+        rpc: "https://rpc.callistodao.org/",
+        confirmations: 64,
+    },*/
 };
 
 const bridgeV2ABI = [
@@ -217,7 +208,7 @@ async function addToken(token, chainId) {
             decimals = 18;
         } else {
             // get token info
-            const r = await contract.addToken(token);
+            const r = await contract.getToken(token);
             if (BigInt(r.token) == BigInt(token) && r.chainID == BigInt(chainId) && BigInt(r.wrappedToken) == 0n) {
                 const tokenContract = new ethers.Contract(token, ["function name() view returns (string)", "function symbol() view returns (string)", "function decimals() view returns (uint8)"], provider);
                 name = await tokenContract.name();

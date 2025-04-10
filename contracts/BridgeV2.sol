@@ -494,7 +494,7 @@ contract BridgeV2 is Ownable {
         address _feeTo,    // wallet which receive fees from bridge
         address _tokenImplementation,   // token implementation contract
         uint256 _threshold,             // minimum authorities required to approve bridge transaction
-        address[] calldata _authorities, // addresses of authorities. _authorities[0] is requiredAuthority
+        address[] calldata _authorities, // addresses of authorities.
         uint256[] calldata _chainID,     // supported chain IDs (exclude native chain)
         string calldata _nativeCoin     // name of native coin (i.e. ETH, BNB, MATIC)
     ) external {
@@ -516,19 +516,20 @@ contract BridgeV2 is Ownable {
         contractCaller = address(new ContractCaller());
         feeTo = _feeTo;
         emit SetFeeTo(address(0), _feeTo);
-        // set threshold and required authorities
+        // set threshold
         threshold = _threshold;
-        minRequiredAuthorities = 1;
-        emit SetThreshold(_threshold, 1);
-        requiredAuthorities[_authorities[0]] = true;
-        emit SetRequiredAuthority(_authorities[0], true);
+        emit SetThreshold(_threshold, 0);
         // add native coin to bridge
         bytes32 key = keccak256(abi.encodePacked(address(1), block.chainid));
         addedTokens[key].token = address(1);
         addedTokens[key].chainID = block.chainid;
         nativeToToken[address(1)] = key;
         emit AddToken(address(1), block.chainid, 18, _nativeCoin, _nativeCoin);
-        _owner = newOwner;  // set owner
+        // set owner and disallow setup if owner is not deployer
+        if (newOwner != msg.sender) {
+            _owner = newOwner;  // set owner
+            setupMode = 0; // disallow setup
+        }
         emit OwnershipTransferred(address(0), newOwner);
     }
 
@@ -634,11 +635,13 @@ contract BridgeV2 is Ownable {
     }
 
     // set authority address that MUST sign claim request
-    function setRequiredAuthorities(address[] calldata _authorities, bool isActive)
+    function setRequiredAuthorities(address[] calldata _authorities, bool isActive, uint256 _minRequiredAuthorities)
         external
         onlyOwner
         onlySetup
     {
+        minRequiredAuthorities = _minRequiredAuthorities;
+        emit SetThreshold(threshold, _minRequiredAuthorities);
         for (uint256 i = 0; i < _authorities.length; i++){
             requiredAuthorities[_authorities[i]] = isActive;
             emit SetRequiredAuthority(_authorities[i], isActive);
