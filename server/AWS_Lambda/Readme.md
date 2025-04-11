@@ -6,6 +6,7 @@
 And add updated `authorityV2.js` to archive [aws_lambda.zip](./aws_lambda.zip)
 
 3. Create Lambda function (Node 18.x) like on the screenshot.
+![Select Lambda](./lambda0.jpg)
 ![Create Lambda Function](./lambda1.jpg)
 
 4. Copy `URL` - it's your authority API entrypoint. 
