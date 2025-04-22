@@ -110,7 +110,6 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 
 
 ## Deployment 
-- On all supported chains: `0xA2Db85A43a443cAcCD176AaDE36c5980B9d2E643` (deployed in the second transaction from wallet `0x851bE0807823c7667Cd04971CaF758Bd14eb002D`)
 - Founder's and Owner's Multisig owners' wallets: 
 ```Solidity
 [
@@ -153,6 +152,7 @@ authorityURL =
     "8453"
 ]
 ```
+- Bridge deployer address: `0x724253C05366e42bb0F484a0cdf19810862065cD`
 
 1. Deploy `ERC20_implementation` (`0xE42fA5629b7EcDfba39a09C284B153FFA896E862`)
 2. Deploy `BridgeV2` (`0x623Ef498161BFabB37EB85Cd8B65230226a54C87`)

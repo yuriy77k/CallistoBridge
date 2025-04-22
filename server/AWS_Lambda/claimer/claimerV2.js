@@ -1,5 +1,5 @@
 const { ethers } = require('ethers');
-require('dotenv').config(); // if use .env file for enviroment variables
+//require('dotenv').config(); // if use .env file for enviroment variables
 
 
 const claimer_pk = process.env.CLAIMER_PK;  // Private key should be hidden
