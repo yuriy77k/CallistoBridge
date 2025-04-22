@@ -108,11 +108,11 @@ async function claim(txID, txChain)
 
     try {
         const wallet = new ethers.Wallet(claimer_pk);
-        const provider = new ethers.JsonRpcProvider(RPC[sig[0].chainId], wallet);
-        const bridge = new ethers.Contract(bridgeContracts[sig[0].chainId], bridge_abi, provider);
+        const provider = new ethers.JsonRpcProvider(RPC[sig[0].chainId]);
+        const signer = wallet.connect(provider);
+        const bridge = new ethers.Contract(bridgeContracts[sig[0].chainId], bridge_abi, signer);
 
         // check receiver balance
-        const min = minimalBalance[sig[0].chainId];   // user shouldn't has more money on balance to get free claim
         const balance = await provider.getBalance(sig[0].to);
         if (balance >= BigInt(min) ) {
             return {isSuccess: false, message: "Receiver balance: "+ (Number(balance)/1e18) +" is not less then required: " + (min/1e18) };
@@ -120,11 +120,11 @@ async function claim(txID, txChain)
 
         if ("toContract" in sig[0]) {
             //console.log("toContract");
-            var tx = await bridge.methods.claimToContract(sig[0].originalToken, sig[0].originalChainID, txID, sig[0].to, sig[0].value, txChain, sig[0].toContract, sig[0].data, signatures);
+            var tx = await bridge.claimToContract(sig[0].originalToken, sig[0].originalChainID, txID, sig[0].to, sig[0].value, txChain, sig[0].toContract, sig[0].data, signatures);
             return {isSuccess: true, txHash: tx.hash, chainID: sig[0].chainId};
         } else {
             //console.log("claim");
-            var tx = await bridge.methods.claim(sig[0].originalToken, sig[0].originalChainID, txID, sig[0].to, sig[0].value, txChain, signatures);
+            var tx = await bridge.claim(sig[0].originalToken, sig[0].originalChainID, txID, sig[0].to, sig[0].value, txChain, signatures);
             return {isSuccess: true, txHash: tx.hash, chainID: sig[0].chainId};
         }
     }
