@@ -794,7 +794,7 @@ contract BridgeV2 is Ownable {
         string memory _symbol = string(abi.encodePacked("W", symbol));
         address wrappedToken = Clones.cloneDeterministic(
             tokenImplementation,
-            bytes32(uint256(uint160(token)))
+            key
         );
         IERC20TokenCloned(wrappedToken).initialize(
             _name,

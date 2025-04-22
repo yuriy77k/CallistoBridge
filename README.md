@@ -122,11 +122,23 @@ For example: let's there is DAI token on ETH chain and we wants to create bridge
 ```
 - Authorities: 
 ```Solidity
+authorityWallet =
 [
     "0x9cF318Cf120F98F1ad82F27041CfD28c9e0c0C9b",
     "0x5047e1df36E80722627D2cccf99006D578FE3797",
     "0x9fd61d384f7caa39C8be1107FfA91dA9F0F9E280",
     "0x3A93976Cf512A6d671358AAC41C91C8D8DB3EAAE"
+]
+```
+
+- Authorities URL: 
+```Solidity
+authorityURL =
+[
+    "https://mrs6x6ew7njwnad27dkhear7ya0tzbjy.lambda-url.eu-north-1.on.aws",
+    "https://7iurhujz7zfo4gx65p7ws7wliy0gaexu.lambda-url.eu-north-1.on.aws",
+    "https://3jb2sp2i7x27xmcol2qsetcvse0jgtzp.lambda-url.eu-north-1.on.aws",
+    "https://hvktatipoqgc74s6su4j3h273i0gaotl.lambda-url.us-east-1.on.aws"
 ]
 ```
 - Chains ID for `[Fushuma, Polygon, BNB, Ethereum, Unichain, Arbitrum, Base]`:
