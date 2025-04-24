@@ -182,6 +182,27 @@ Multisigs addresses on all supported chains are the identical:
 
 
 ### Authority
+- Authorities URL: 
+```Solidity
+authorityURL =
+[
+    "https://mrs6x6ew7njwnad27dkhear7ya0tzbjy.lambda-url.eu-north-1.on.aws",
+    "https://7iurhujz7zfo4gx65p7ws7wliy0gaexu.lambda-url.eu-north-1.on.aws",
+    "https://3jb2sp2i7x27xmcol2qsetcvse0jgtzp.lambda-url.eu-north-1.on.aws",
+    "https://hvktatipoqgc74s6su4j3h273i0gaotl.lambda-url.us-east-1.on.aws"
+]
+```
+
+Require at least 3 signatures.
+
+- To get signatures to claim: `authorityURL + "/auth?tx={transaction hash}&chain={chainId where transaction was sent}"`
+- To get signatures to add wrapped tokens: `authorityURL +  "/addToken?token={address of token on origin chain}&chain={origin chainId}"`
+
+### Claimer
+
+Claimer allow to claim tokens on Fushuma chain if user does not have FUMA tokens to pay for transaction.
+- Claimer URL: `https://iy4y4qnffokbpqzmb55f2c6jpy0vmwiq.lambda-url.us-east-1.on.aws`
+- To claim: `claimerURL + "/claim?tx={transaction hash}&chain={chainId where transaction was sent}"`. Required block confirmation number should passed before claim.
 
 ## Test deployment
 ### Fushuma
