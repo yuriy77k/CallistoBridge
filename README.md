@@ -220,3 +220,42 @@ Claimer allow to claim tokens on Fushuma chain if user does not have FUMA tokens
   - Add token: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/addToken?token=0x0000000000000000000000000000000000000001&chain=121224
   - Claim: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/auth?tx=0x876c3b158a6e95005c2a3331a8d3849d3fbb3ebefd3966c5c9f93605c41aeed4&chain=820
   - Claim to contract: https://rrhlkmpf5kwflojrf3kgigvvvm0drquu.lambda-url.us-west-2.on.aws/auth?tx=0x5dc0bdea37f75fd62cc2c5920f6c6b009b9de0ce3065a83bfdf1af96ff508f4a&chain=820
+
+## Added Tokens
+
+List of added tokens can be receive from the bridge contract by function `getTokensList()`.
+
+On all chains address `0x0000000000000000000000000000000000000001` means native coin. For example, FUMA on Fushuma chain.
+
+### Fushuma
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped ETH from ETH chain
+- `0x4922caaf79952d9f987AC6a449f891bfE97B9389`: Wrapped ETH from UNI chain
+- `0x6Dd5b658B6FA6242Cef0404F91951fC62741A3A3`: Wrapped ETH from Arbitrum chain
+- `0xdE88176B951E703B9ba7423FE1FED62e16e3F5E4`: Wrapped ETH from Base chain
+- `0x1e11d176117dbEDbd234b1c6a10C6eb8dceD275e`: Wrapped USDT from ETH chain
+- `0x9d0FB7b3fb7d37476aECcc47e29732460feB3be0`: Wrapped USDT from BNB chain
+- `0xf8EA5627691E041dae171350E8Df13c592084848`: Wrapped USDC from Base chain
+- `0x27544116035a3dB6602268304117f6A056e58547`: Wrapped BNB from BNB chain
+- `0x8095fa918029F28AEccE771E683Aa7dB587cDf07`: Wrapped POL from Polygon chain
+
+ ### ETH
+- `0xdAC17F958D2ee523a2206206994597C13D831ec7`: USDT
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
+### BNB
+- `0x55d398326f99059fF775485246999027B3197955`: USDT
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
+### Base
+- `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`: USDC
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
+### Arbitrum
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
+### Polygon
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
+### Unichain
+- `0x42c8d7460153178a8C3344DBE3EDc96A7Aa19322`: Wrapped FUMA
+
