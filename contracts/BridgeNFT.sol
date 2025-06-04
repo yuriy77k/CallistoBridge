@@ -370,7 +370,7 @@ contract CallistoNFTBridge is Ownable {
 
     function requestUpgrade(address newContract) external onlyOwner {
         require(newContract != address(0), "Zero address");
-        uint256 validFrom = block.timestamp + 3 days;
+        uint256 validFrom = block.timestamp;// + 3 days;    // allow upgrade after 3 days
         upgradeData = Upgrade(newContract, uint64(validFrom));
         emit UpgradeRequest(newContract, validFrom);
     }

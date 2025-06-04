@@ -87,6 +87,12 @@ Users or dapps can read from wrapped NFT contract information about origen NFT c
 
 ## Testnet contracts
 
+### Fushuma
+
+- bridge NFT (proxy): https://fumascan.com/address/0xaA35d9D9DbfcE3D50bc94Cc7DE62d06e62A54569?tab=write_proxy_contract
+- HybridNFT implementation: https://fumascan.com/address/0x9e87125e851f9f435609b5c12296f9b317a5F248?tab=contract
+- bridge implementation: https://fumascan.com/address/0x5A4e9d0fa6a2F29af5c46C93b7e1464794f64e0D?tab=contract
+
 ### Callisto test net
 
 - bridge NFT [0xe96E157d994300B50073559820Fe49a015ecEf1E](https://testnet-explorer.callisto.network/address/0xe96E157d994300B50073559820Fe49a015ecEf1E/transactions)
